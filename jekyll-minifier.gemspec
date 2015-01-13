@@ -2,7 +2,7 @@
 require File.expand_path('../lib/jekyll-minifier/version', __FILE__)
 
 Gem::Specification.new do |gem|
-  gem.authors     = ["digitalsparky"]
+  gem.authors     = ["DigitalSparky"]
   gem.email       = ["matthew@spurrier.com.au"]
   gem.description = %q{Jekyll Minifier using htmlcompressor for html , and YUI compressor for js and css}
   gem.summary     = %q{Jekyll Minifier for html, css, and javascript}

@@ -15,3 +15,9 @@ Then add this to your _config.yml:
 <pre><code>gems:
     - jekyll-minifier
 </code></pre>
+
+Optionally, you can also add exclusions using:
+<pre><code>jekyll-minifier:
+  exclude: 'atom.xml' # Exclude files from processing - file name, glob pattern or array of file names and glob patterns
+</code></pre>
+
