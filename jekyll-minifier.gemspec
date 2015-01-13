@@ -16,9 +16,9 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = Jekyll::Minifier::VERSION
 
-  gem.add_dependency "jekyll"
-  gem.add_dependency "yui-compressor", ">= 0.12.0"
-  gem.add_dependency "htmlcompressor", ">= 0.1.2"
+  gem.add_dependency "jekyll", "~> 2.5", ">= 2.5.3"
+  gem.add_dependency "yui-compressor", "~> 0.12", ">= 0.12.0"
+  gem.add_dependency "htmlcompressor", "~> 0.1.2", ">= 0.1.2"
 
   gem.add_development_dependency "rake"
 end
