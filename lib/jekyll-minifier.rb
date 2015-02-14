@@ -76,7 +76,7 @@ module Jekyll
 
   class StaticFile
     include Compressor
-    
+
     def copy_file(path, dest_path)
       FileUtils.mkdir_p(File.dirname(dest_path))
       FileUtils.cp(path, dest_path)
@@ -88,25 +88,28 @@ module Jekyll
       return false if File.exist?(dest_path) and !modified?
       @@mtimes[path] = mtime
 
-      case File.extname(dest_path)
-        when '.js'
-          if dest_path =~ /.min.js$/
-            copy_file(path, dest_path)
+      if exclude?(dest, dest_path)
+        copy_file(path, dest_path)
+      else
+        case File.extname(dest_path)
+          when '.js'
+            if dest_path =~ /.min.js$/
+              copy_file(path, dest_path)
+            else
+              output_js(dest_path, File.read(path))
+            end
+          when '.css'
+            if dest_path =~ /.min.css$/
+              copy_file(path, dest_path)
+            else
+              output_css(dest_path, File.read(path))
+            end
+          when '.xml'
+            output_html(dest_path, File.read(path))
           else
-            output_js(dest_path, File.read(path))
-          end
-        when '.css'
-          if dest_path =~ /.min.css$/
             copy_file(path, dest_path)
-          else
-            output_css(dest_path, File.read(path))
-          end
-        when '.xml'
-          output_html(dest_path, File.read(path))
-        else
-          copy_file(path, dest_path)
+        end
       end
-
       true
     end
   end
