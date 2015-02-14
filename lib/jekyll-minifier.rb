@@ -89,7 +89,7 @@ module Jekyll
       @@mtimes[path] = mtime
 
       if exclude?(dest, dest_path)
-        output_file(dest_path, output)
+        copy_file(path, dest_path)
       else
         case File.extname(dest_path)
           when '.js'
