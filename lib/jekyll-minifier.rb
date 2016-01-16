@@ -52,7 +52,7 @@ module Jekyll
     end
   end
 
-  class Post
+  class Document
     include Compressor
 
     def write(dest)
