@@ -9,10 +9,10 @@ Gem::Specification.new do |gem|
 
   gem.authors     = ["DigitalSparky"]
   gem.email       = ["matthew@spurrier.com.au"]
-  gem.description = %q{Jekyll Minifier using htmlcompressor for html , and YUI compressor for js and css}
+  gem.description = %q{Jekyll Minifier using htmlcompressor for html, uglifier for js and css}
   gem.summary     = %q{Jekyll Minifier for html, css, and javascript}
   gem.homepage    = "http://github.com/digitalsparky/jekyll-minifier"
-  gem.license     = "GPLv3"
+  gem.license     = "GPL-3.0"
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
@@ -21,9 +21,10 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = Jekyll::Minifier::VERSION
 
-  gem.add_dependency "jekyll", ">= 3.0.0"
-  gem.add_dependency "yui-compressor", "~> 0.12"
-  gem.add_dependency "htmlcompressor", "~> 0.3.0"
+  gem.add_dependency "jekyll", "~> 3.0"
+  gem.add_dependency "uglifier", "~> 2.7"
+  gem.add_dependency "htmlcompressor", "~> 0.3"
+  gem.add_dependency "cssminify", "~> 1.0"
 
   gem.add_development_dependency "rake", "~> 10.4"
 end

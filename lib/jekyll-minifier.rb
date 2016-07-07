@@ -1,5 +1,6 @@
-require 'yui/compressor'
+require 'uglifier'
 require 'htmlcompressor'
+require 'cssminify'
 
 module Jekyll
   module Compressor
@@ -29,26 +30,18 @@ module Jekyll
     end
 
     def output_html(path, content)
-      compressor = HtmlCompressor::Compressor.new({ :remove_comments => true, :compress_css => true, :compress_javascript => true, :css_compressor => :yui, :javascript_compressor => :yui })
+      compressor = HtmlCompressor::Compressor.new({ :remove_comments => true, :compress_css => true, :compress_javascript => true, :css_compressor => CSSminify.new, :javascript_compressor => Uglifier.new })
       output_file(path, compressor.compress(content))
     end
 
     def output_js(path, content)
-      compressor = YUI::JavaScriptCompressor.new({ :munge => true, :preserve_semicolons => true, :optimize => true, :line_break => nil })
-      output_file(path, compressor.compress(content))
-    rescue compressor::ParseError => e
-      warn "Warning: parse error in #{path}. Don't panic - copying initial file"
-      warn "Details: #{e.message.strip}"
-      output_file(path, content)
+      compressed = Uglifier.new
+      output_file(path, compressed.compile(content))
     end
 
     def output_css(path, content)
-      compressor = YUI::CssCompressor.new({ :line_break =>  -1 })
+      compressor = CSSminify.new
       output_file(path, compressor.compress(content))
-    rescue compressor::RuntimeError => e
-      warn "Warning: parse error in #{path}. Don't panic - copying initial file"
-      warn "Details: #{e.message.strip}"
-      output_file(path, content)
     end
   end
 
