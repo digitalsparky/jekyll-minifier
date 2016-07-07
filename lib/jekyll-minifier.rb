@@ -29,7 +29,7 @@ module Jekyll
     end
 
     def output_html(path, content)
-      compressor = HtmlCompressor::Compressor.new({ :compress_css => true, :compress_javascript => true, :css_compressor => :yui, :javascript_compressor => :yui })
+      compressor = HtmlCompressor::Compressor.new({ :remove_comments => true, :compress_css => true, :compress_javascript => true, :css_compressor => :yui, :javascript_compressor => :yui })
       output_file(path, compressor.compress(content))
     end
 
