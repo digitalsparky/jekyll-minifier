@@ -4,7 +4,7 @@ require File.expand_path('../lib/jekyll-minifier/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.specification_version = 2 if gem.respond_to? :specification_version=
   gem.required_rubygems_version = Gem::Requirement.new('>= 0') if gem.respond_to? :required_rubygems_version=
-  gem.rubygems_version = '2.2.2'
+  gem.rubygems_version = '2.3.1'
   gem.required_ruby_version = '>= 2.0.0'
 
   gem.authors     = ["DigitalSparky"]
