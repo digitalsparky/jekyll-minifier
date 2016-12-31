@@ -1,6 +1,6 @@
 require 'uglifier'
 require 'htmlcompressor'
-require 'cssminify'
+require 'cssminify2'
 
 module Jekyll
   module Compressor
@@ -30,7 +30,7 @@ module Jekyll
     end
 
     def output_html(path, content)
-      compressor = HtmlCompressor::Compressor.new({ :remove_comments => true, :compress_css => true, :compress_javascript => true, :css_compressor => CSSminify.new, :javascript_compressor => Uglifier.new })
+      compressor = HtmlCompressor::Compressor.new({ :remove_comments => true, :compress_css => true, :compress_javascript => true, :css_compressor => CSSminify2.new, :javascript_compressor => Uglifier.new })
       output_file(path, compressor.compress(content))
     end
 
@@ -40,7 +40,7 @@ module Jekyll
     end
 
     def output_css(path, content)
-      compressor = CSSminify.new
+      compressor = CSSminify2.new
       output_file(path, compressor.compress(content))
     end
   end
