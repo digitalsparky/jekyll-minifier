@@ -51,6 +51,7 @@ module Jekyll
     def write(dest)
       dest_path = destination(dest)
       output_html(dest_path, output)
+      trigger_hooks(:post_write)
     end
   end
 
@@ -64,6 +65,7 @@ module Jekyll
       else
         output_html(dest_path, output)
       end
+      Jekyll::Hooks.trigger hook_owner, :post_write, self
     end
   end
 
