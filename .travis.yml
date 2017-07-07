@@ -5,6 +5,7 @@ deploy:
   gem: jekyll-minifier
   on:
     tags: true
+    all_branches: true
     repo: digitalsparky/jekyll-minifier
 language: ruby
 rvm:
