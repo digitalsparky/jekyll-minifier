@@ -85,7 +85,11 @@ module Jekyll
 
     def write(dest)
       dest_path = destination(dest)
-      output_html(dest_path, output)
+      if exclude?(dest, dest_path)
+        output_file(dest_path, output)
+      else
+        output_html(dest_path, output)
+      end
       trigger_hooks(:post_write)
     end
   end
