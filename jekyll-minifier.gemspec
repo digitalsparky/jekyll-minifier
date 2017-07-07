@@ -19,15 +19,15 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "jekyll-minifier"
   gem.require_paths = ["lib"]
-  
+
   if ENV['TRAVIS_TAG']
     gem.version     = "#{ENV['TRAVIS_TAG']}"
   else
     gem.version     = Jekyll::Minifier::VERSION
   end
-  
-  gem.add_dependency "jekyll", "~> 3.0"
-  gem.add_dependency "uglifier", "~> 2.7"
+
+  gem.add_dependency "jekyll", "~> 3.5"
+  gem.add_dependency "uglifier", "~> 3.2"
   gem.add_dependency "htmlcompressor", "~> 0.3"
   gem.add_dependency "cssminify2", "~> 2.0"
 
