@@ -5,21 +5,8 @@ require 'cssminify2'
 module Jekyll
   module Compressor
     def exclude?(dest, dest_path)
-      res = false
       file_name = dest_path.slice(dest.length+1..dest_path.length)
-      exclude = @site.config['jekyll-minifier'] && @site.config['jekyll-minifier']['exclude']
-      if exclude
-        if exclude.is_a? String
-          exclude = [exclude]
-        end
-        exclude.each do |e|
-          if e == file_name || File.fnmatch(e, file_name)
-            res = true
-            break
-          end
-        end
-      end
-      res
+      exclude.any? { |e| e == file_name || File.fnmatch(e, file_name) }
     end
 
     def output_file(dest, content)
@@ -74,6 +61,12 @@ module Jekyll
     def output_css(path, content)
       compressor = CSSminify2.new
       output_file(path, compressor.compress(content))
+    end
+
+    private
+
+    def exclude
+      @exclude ||= Array(@site.config.dig('jekyll-minifier', 'exclude'))
     end
   end
 
