@@ -4,11 +4,6 @@ require 'cssminify2'
 
 module Jekyll
   module Compressor
-    def exclude?(dest, dest_path)
-      file_name = dest_path.slice(dest.length+1..dest_path.length)
-      exclude.any? { |e| e == file_name || File.fnmatch(e, file_name) }
-    end
-
     def output_file(dest, content)
       FileUtils.mkdir_p(File.dirname(dest))
       File.open(dest, 'w') do |f|
@@ -64,6 +59,11 @@ module Jekyll
     end
 
     private
+
+    def exclude?(dest, dest_path)
+      file_name = dest_path.slice(dest.length+1..dest_path.length)
+      exclude.any? { |e| e == file_name || File.fnmatch(e, file_name) }
+    end
 
     def exclude
       @exclude ||= Array(@site.config.dig('jekyll-minifier', 'exclude'))
