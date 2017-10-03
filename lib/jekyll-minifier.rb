@@ -38,7 +38,7 @@ module Jekyll
         args[:preserve_line_breaks]        = opts['preserve_line_breaks']       if opts.has_key?('preserve_line_breaks')
         args[:simple_boolean_attributes]   = opts['simple_boolean_attributes']  if opts.has_key?('simple_boolean_attributes')
         args[:compress_js_templates]       = opts['compress_js_templates']      if opts.has_key?('compress_js_templates')
-        args[:preserve_patterns]          += [/<\?php.*?\?>/im]                if opts[:preserve_php] == true
+        args[:preserve_patterns]          += [/<\?php.*?\?>/im]                if opts['preserve_php'] == true
 
         # Potential to add patterns from YAML
         #args[:preserve_patterns]          += opts[:preserve_patterns].map { |pattern| Regexp.new(pattern)} if opts.has_key?(:preserve_patterns)
