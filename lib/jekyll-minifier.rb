@@ -79,21 +79,21 @@ module Jekyll
         output_file(dest_path, output)
       else
         case File.extname(dest_path)
-		      when '.js'
-			      if dest_path =~ /.min.js$/
+          when '.js'
+            if dest_path =~ /.min.js$/
               output_file(dest_path, output)
-			      else
+            else
               output_js(dest_path, output)
-			      end
-		      when '.css'
-			      if dest_path =~ /.min.css$/
+            end
+          when '.css'
+            if dest_path =~ /.min.css$/
               output_file(dest_path, output)
-			      else
-			        output_css(dest_path, output)
-			      end
-		      else
+            else
+              output_css(dest_path, output)
+            end
+          else
             output_html(dest_path, output)
-		    end
+        end
       end
       trigger_hooks(:post_write)
     end
@@ -108,21 +108,21 @@ module Jekyll
         output_file(dest_path, output)
       else
         case File.extname(dest_path)
-		      when '.js'
-			      if dest_path =~ /.min.js$/
+          when '.js'
+            if dest_path =~ /.min.js$/
               output_file(dest_path, output)
-			      else
+	    else
               output_js(dest_path, output)
-			      end
-		      when '.css'
-			      if dest_path =~ /.min.css$/
+            end
+          when '.css'
+            if dest_path =~ /.min.css$/
               output_file(dest_path, output)
-			      else
-			        output_css(dest_path, output)
-			      end
-		      else
+            else
+              output_css(dest_path, output)
+            end
+          else
             output_html(dest_path, output)
-		    end
+        end
       end
       Jekyll::Hooks.trigger hook_owner, :post_write, self
     end
