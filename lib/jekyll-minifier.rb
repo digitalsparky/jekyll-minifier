@@ -78,7 +78,22 @@ module Jekyll
       if exclude?(dest, dest_path)
         output_file(dest_path, output)
       else
-        output_html(dest_path, output)
+        case File.extname(dest_path)
+		      when '.js'
+			      if dest_path =~ /.min.js$/
+              output_file(dest_path, output)
+			      else
+              output_js(dest_path, output)
+			      end
+		      when '.css'
+			      if dest_path =~ /.min.css$/
+              output_file(dest_path, output)
+			      else
+			        output_css(dest_path, output)
+			      end
+		      else
+            output_html(dest_path, output)
+		    end
       end
       trigger_hooks(:post_write)
     end
@@ -92,7 +107,22 @@ module Jekyll
       if exclude?(dest, dest_path)
         output_file(dest_path, output)
       else
-        output_html(dest_path, output)
+        case File.extname(dest_path)
+		      when '.js'
+			      if dest_path =~ /.min.js$/
+              output_file(dest_path, output)
+			      else
+              output_js(dest_path, output)
+			      end
+		      when '.css'
+			      if dest_path =~ /.min.css$/
+              output_file(dest_path, output)
+			      else
+			        output_css(dest_path, output)
+			      end
+		      else
+            output_html(dest_path, output)
+		    end
       end
       Jekyll::Hooks.trigger hook_owner, :post_write, self
     end
