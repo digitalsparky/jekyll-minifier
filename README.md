@@ -14,7 +14,7 @@ Easy to use, just install the jekyll-minifier gem:
 
 Then add this to your _config.yml:
 
-<pre><code>gems:
+<pre><code>plugins:
     - jekyll-minifier
 </code></pre>
 
