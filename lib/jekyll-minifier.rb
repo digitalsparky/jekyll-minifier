@@ -11,6 +11,25 @@ module Jekyll
       end
     end
 
+    def output_compressed(path, context)
+      case File.extname(path)
+        when '.js'
+          if path.end_with?('.min.js')
+            output_file(path, context)
+          else
+            output_js(path, context)
+          end
+        when '.css'
+          if path.end_with?('.min.css')
+            output_file(path, context)
+          else
+            output_css(path, context)
+          end
+        else
+          output_html(path, context)
+      end
+    end
+
     def output_html(path, content)
       args = { remove_comments: true, compress_css: true, compress_javascript: true, preserve_patterns: [] }
       args[:css_compressor] = CSSminify2.new
@@ -78,22 +97,7 @@ module Jekyll
       if exclude?(dest, dest_path)
         output_file(dest_path, output)
       else
-        case File.extname(dest_path)
-          when '.js'
-            if dest_path =~ /.min.js$/
-              output_file(dest_path, output)
-            else
-              output_js(dest_path, output)
-            end
-          when '.css'
-            if dest_path =~ /.min.css$/
-              output_file(dest_path, output)
-            else
-              output_css(dest_path, output)
-            end
-          else
-            output_html(dest_path, output)
-        end
+        output_compressed(dest_path, output)
       end
       trigger_hooks(:post_write)
     end
@@ -107,22 +111,7 @@ module Jekyll
       if exclude?(dest, dest_path)
         output_file(dest_path, output)
       else
-        case File.extname(dest_path)
-          when '.js'
-            if dest_path =~ /.min.js$/
-              output_file(dest_path, output)
-	    else
-              output_js(dest_path, output)
-            end
-          when '.css'
-            if dest_path =~ /.min.css$/
-              output_file(dest_path, output)
-            else
-              output_css(dest_path, output)
-            end
-          else
-            output_html(dest_path, output)
-        end
+        output_compressed(dest_path, output)
       end
       Jekyll::Hooks.trigger hook_owner, :post_write, self
     end
@@ -147,13 +136,13 @@ module Jekyll
       else
         case File.extname(dest_path)
           when '.js'
-            if dest_path =~ /.min.js$/
+            if dest_path.end_with?('.min.js')
               copy_file(path, dest_path)
             else
               output_js(dest_path, File.read(path))
             end
           when '.css'
-            if dest_path =~ /.min.css$/
+            if dest_path.end_with?('.min.css')
               copy_file(path, dest_path)
             else
               output_css(dest_path, File.read(path))
