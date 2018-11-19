@@ -63,7 +63,7 @@ module Jekyll
         html_args[:preserve_patterns]          += opts[:preserve_patterns].map { |pattern| Regexp.new(pattern)} if opts.has_key?(:preserve_patterns)
         html_args[:css_compressor]              = CSSminify2.new()
 
-        if (js_args.nil?)
+        if (js_args.nil? || js_args.empty?)
           html_args[:javascript_compressor]       = Uglifier.new()
         else
           html_args[:javascript_compressor]       = Uglifier.new(js_args)
