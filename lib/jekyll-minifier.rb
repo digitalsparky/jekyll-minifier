@@ -62,8 +62,12 @@ module Jekyll
         html_args[:preserve_patterns]          += [/<\?php.*?\?>/im]                 if opts['preserve_php'] == true
         html_args[:preserve_patterns]          += opts[:preserve_patterns].map { |pattern| Regexp.new(pattern)} if opts.has_key?(:preserve_patterns)
         html_args[:css_compressor]              = CSSminify2.new()
-        html_args[:javascript_compressor]       = Uglifier.new(js_args)
 
+        if (js_args.nil?)
+          html_args[:javascript_compressor]       = Uglifier.new()
+        else
+          html_args[:javascript_compressor]       = Uglifier.new(js_args)
+        end
       end
 
       compressor = HtmlCompressor::Compressor.new(html_args)
@@ -71,7 +75,18 @@ module Jekyll
     end
 
     def output_js(path, content)
-      compressed = Uglifier.new(js_args)
+      opts       = @site.config['jekyll-minifier']
+      js_args    = {}
+      if ( !opts.nil? )
+        js_args   += opts[:js_args] if opts.has_key?(:js_args)
+      end
+
+      if (js_args.nil?)
+        compressed = Uglifier.new()
+      else
+        compressed = Uglifier.new(js_args)
+      end
+
       output_file(path, compressed.compile(content))
     end
 
