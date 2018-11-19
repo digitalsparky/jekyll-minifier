@@ -9,5 +9,5 @@ deploy:
     repo: digitalsparky/jekyll-minifier
 language: ruby
 rvm:
-- 2.3.1
+  - 2.5.1
 script: bundle exec rspec spec

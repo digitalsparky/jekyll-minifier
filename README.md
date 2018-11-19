@@ -1,6 +1,6 @@
 # jekyll-minifier [![Build Status](https://travis-ci.org/digitalsparky/jekyll-minifier.svg?branch=master)](https://travis-ci.org/digitalsparky/jekyll-minifier) [![Gem Version](https://badge.fury.io/rb/jekyll-minifier.svg)](http://badge.fury.io/rb/jekyll-minifier)
 
-Requires Ruby 2.3+
+Requires Ruby 2.5+
 
 Minifies HTML, XML, CSS, and Javascript both inline and as separate files utilising yui-compressor and htmlcompressor.
 
@@ -12,17 +12,20 @@ Easy to use, just install the jekyll-minifier gem:
 
 <pre><code>gem install jekyll-minifier</code></pre>
 
-Then add this to your _config.yml:
+Then add this to your \_config.yml:
 
 <pre><code>plugins:
     - jekyll-minifier
 </code></pre>
 
 Optionally, you can also add exclusions using:
+
 <pre><code>jekyll-minifier:
   exclude: 'atom.xml' # Exclude files from processing - file name, glob pattern or array of file names and glob patterns
 </code></pre>
+
 and toggle htmlcompressor features using:
+
 <pre><code>jekyll-minifier:
   preserve_php: true                # Default: false
   remove_spaces_inside_tags: true   # Default: true
@@ -44,5 +47,18 @@ and toggle htmlcompressor features using:
   preserve_line_breaks: false       # Default: false
   simple_boolean_attributes: false  # Default: false
   compress_js_templates: false      # Default: false
+  preserve_patterns: {}             # Default: {}
+  js_args: {}                       # Default: {}
 </code></pre>
 
+js_args can be found in the the uglifier documentation at listed below
+
+Note: es6 has been implemented as experimental only via the upstream uglifier package.
+See https://github.com/lautis/uglifier for more information.
+
+To enable es6 syntax use:
+
+<pre><code>
+jekyll-minifier:
+  js_args: { es6: true }
+</code></pre>
