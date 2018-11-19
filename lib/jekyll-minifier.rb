@@ -37,7 +37,7 @@ module Jekyll
       opts = @site.config['jekyll-minifier']
       if ( !opts.nil? )
         # Javascript Arguments
-        js_args                                += opts[:js_args]                     if opts.has_key?(:js_args)
+        js_args                                += opts[:uglifier_args]                     if opts.has_key?(:uglifier_args)
         
         # HTML Arguments
         html_args[:remove_spaces_inside_tags]   = opts['remove_spaces_inside_tags']  if opts.has_key?('remove_spaces_inside_tags')

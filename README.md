@@ -48,7 +48,7 @@ and toggle htmlcompressor features using:
   simple_boolean_attributes: false  # Default: false
   compress_js_templates: false      # Default: false
   preserve_patterns:                # Default: (empty)
-  js_args:                          # Default: (empty)
+  uglifier_args:                    # Default: (empty)
 </code></pre>
 
 js_args can be found in the the uglifier documentation at listed below
@@ -60,7 +60,7 @@ To enable es6 syntax use:
 
 <pre><code>
 jekyll-minifier:
-  js_args:
+  uglifier_args:
     harmony: true
 
 </code></pre>
