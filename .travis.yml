@@ -10,4 +10,4 @@ deploy:
 language: ruby
 rvm:
   - 2.3.1
-script: bundle exec rspec spec
+script: JEKYLL_ENV="production" bundle exec rspec spec
