@@ -8,7 +8,7 @@ This was created due to the previous minifier (jekyll-press) not being CSS3 comp
 
 Note: this is my first ever gem, I'm learning, so feedback is much appreciated.
 
-** This minifier now only runs when JEKYLL_ENV="production" is set in the enviornment **
+** This minifier now only runs when JEKYLL_ENV="production" is set in the environment **
 
 Easy to use, just install the jekyll-minifier gem:
 
