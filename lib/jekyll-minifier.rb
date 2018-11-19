@@ -37,7 +37,7 @@ module Jekyll
       opts = @site.config['jekyll-minifier']
       if ( !opts.nil? )
         # Javascript Arguments
-        js_args                                += opts[:uglifier_args]                     if opts.has_key?(:uglifier_args)
+        js_args                                += opts[:uglifier_args]               if opts.has_key?(:uglifier_args)
         
         # HTML Arguments
         html_args[:remove_spaces_inside_tags]   = opts['remove_spaces_inside_tags']  if opts.has_key?('remove_spaces_inside_tags')
@@ -61,13 +61,14 @@ module Jekyll
         html_args[:compress_js_templates]       = opts['compress_js_templates']      if opts.has_key?('compress_js_templates')
         html_args[:preserve_patterns]          += [/<\?php.*?\?>/im]                 if opts['preserve_php'] == true
         html_args[:preserve_patterns]          += opts[:preserve_patterns].map { |pattern| Regexp.new(pattern)} if opts.has_key?(:preserve_patterns)
-        html_args[:css_compressor]              = CSSminify2.new()
+      end
+      
+      html_args[:css_compressor]              = CSSminify2.new()
 
-        if (js_args.nil? || js_args.empty?)
-          html_args[:javascript_compressor]       = Uglifier.new()
-        else
-          html_args[:javascript_compressor]       = Uglifier.new(js_args)
-        end
+      if ( !js_args.nil? )
+        html_args[:javascript_compressor]       = Uglifier.new(js_args)
+      else
+        html_args[:javascript_compressor]       = Uglifier.new()
       end
 
       compressor = HtmlCompressor::Compressor.new(html_args)
@@ -81,10 +82,10 @@ module Jekyll
         js_args   += opts[:js_args] if opts.has_key?(:js_args)
       end
 
-      if (js_args.nil?)
-        compressed = Uglifier.new()
+      if ( !js_args.nil? )
+        compressor = Uglifier.new(js_args)
       else
-        compressed = Uglifier.new(js_args)
+        compressor = Uglifier.new()
       end
 
       output_file(path, compressed.compile(content))

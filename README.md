@@ -24,7 +24,7 @@ Optionally, you can also add exclusions using:
   exclude: 'atom.xml' # Exclude files from processing - file name, glob pattern or array of file names and glob patterns
 </code></pre>
 
-and toggle htmlcompressor features using:
+and toggle features and settings using:
 
 <pre><code>jekyll-minifier:
   preserve_php: true                # Default: false
