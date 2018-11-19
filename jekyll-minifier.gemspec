@@ -30,7 +30,6 @@ Gem::Specification.new do |gem|
   gem.add_dependency "uglifier", "~> 4.1"
   gem.add_dependency "htmlcompressor", "~> 0.4"
   gem.add_dependency "cssminify2", "~> 2.0"
-  gem.add_dependency ""
 
   gem.add_development_dependency "rake", "~> 12.3"
   gem.add_development_dependency "rspec", "~> 3.8"
