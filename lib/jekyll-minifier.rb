@@ -39,7 +39,7 @@ module Jekyll
         if ( !opts.nil? )
           # Javascript Arguments
           js_args                                += opts[:uglifier_args]               if opts.has_key?(:uglifier_args)
-          
+
           # HTML Arguments
           html_args[:remove_spaces_inside_tags]   = opts['remove_spaces_inside_tags']  if opts.has_key?('remove_spaces_inside_tags')
           html_args[:remove_multi_spaces]         = opts['remove_multi_spaces']        if opts.has_key?('remove_multi_spaces')
@@ -63,7 +63,7 @@ module Jekyll
           html_args[:preserve_patterns]          += [/<\?php.*?\?>/im]                 if opts['preserve_php'] == true
           html_args[:preserve_patterns]          += opts[:preserve_patterns].map { |pattern| Regexp.new(pattern)} if opts.has_key?(:preserve_patterns)
         end
-        
+
         html_args[:css_compressor]              = CSSminify2.new()
 
         if ( !js_args.nil? )
@@ -95,7 +95,7 @@ module Jekyll
             compressor = Uglifier.new()
           end
 
-          output_file(path, compressed.compile(content))
+          output_file(path, compressor.compile(content))
         else
           output_file(path, content)
         end

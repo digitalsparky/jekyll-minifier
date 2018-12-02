@@ -22,6 +22,8 @@ describe "JekyllMinifier" do
   let(:site)     { Jekyll::Site.new(config) }
   let(:context)  { make_context(site: site) }
   before(:each) do
+    allow(ENV).to receive(:[]).and_call_original
+    allow(ENV).to receive(:[]).with('JEKYLL_ENV').and_return('production')
     site.process
   end
 
