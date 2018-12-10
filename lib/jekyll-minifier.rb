@@ -1,6 +1,7 @@
 require 'uglifier'
 require 'htmlcompressor'
 require 'cssminify2'
+require 'json/minify'
 
 module Jekyll
   module Compressor
@@ -19,6 +20,8 @@ module Jekyll
           else
             output_js(path, context)
           end
+        when '.json'
+          output_json(path, context)
         when '.css'
           if path.end_with?('.min.css')
             output_file(path, context)
@@ -96,6 +99,24 @@ module Jekyll
           end
 
           output_file(path, compressor.compile(content))
+        else
+          output_file(path, content)
+        end
+      else
+        output_file(path, content)
+      end
+    end
+
+    def output_json(path, content)
+      if ( ENV['JEKYLL_ENV'] == "production" )
+        opts       = @site.config['jekyll-minifier']
+        compress = true
+        if ( !opts.nil? )
+          compress    = opts['compress_json']               if opts.has_key?('compress_json')
+        end
+
+        if ( compress )
+          output_file(path, JSON.minify(content))
         else
           output_file(path, content)
         end
@@ -187,6 +208,8 @@ module Jekyll
             else
               output_js(dest_path, File.read(path))
             end
+          when '.json'
+            output_json(dest_path, File.read(path))
           when '.css'
             if dest_path.end_with?('.min.css')
               copy_file(path, dest_path)

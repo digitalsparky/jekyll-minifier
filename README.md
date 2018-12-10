@@ -2,7 +2,7 @@
 
 Requires Ruby 2.3+
 
-Minifies HTML, XML, CSS, and Javascript both inline and as separate files utilising yui-compressor and htmlcompressor.
+Minifies HTML, XML, CSS, JSON and JavaScript both inline and as separate files utilising yui-compressor and htmlcompressor.
 
 This was created due to the previous minifier (jekyll-press) not being CSS3 compatible, which made me frown.
 
@@ -37,6 +37,7 @@ and toggle features and settings using:
   remove_quotes: false              # Default: false
   compress_css: true                # Default: true
   compress_javascript: true         # Default: true
+  compress_json: true               # Default: true
   simple_doctype: false             # Default: false
   remove_script_attributes: false   # Default: false
   remove_style_attributes: false    # Default: false
