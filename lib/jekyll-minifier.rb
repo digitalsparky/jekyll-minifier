@@ -64,7 +64,7 @@ module Jekyll
           html_args[:simple_boolean_attributes]   = opts['simple_boolean_attributes']  if opts.has_key?('simple_boolean_attributes')
           html_args[:compress_js_templates]       = opts['compress_js_templates']      if opts.has_key?('compress_js_templates')
           html_args[:preserve_patterns]          += [/<\?php.*?\?>/im]                 if opts['preserve_php'] == true
-          html_args[:preserve_patterns]          += opts[:preserve_patterns].map { |pattern| Regexp.new(pattern)} if opts.has_key?(:preserve_patterns)
+          html_args[:preserve_patterns]          += opts['preserve_patterns'].map { |pattern| Regexp.new(pattern)} if opts.has_key?('preserve_patterns')
         end
 
         html_args[:css_compressor]              = CSSminify2.new()
