@@ -8,27 +8,32 @@ This was created due to the previous minifier (jekyll-press) not being CSS3 comp
 
 Note: this is my first ever gem, I'm learning, so feedback is much appreciated.
 
-** This minifier now only runs when JEKYLL_ENV="production" is set in the environment **
+**This minifier now only runs when `JEKYLL_ENV="production"` is set in the environment **
 
 Easy to use, just install the jekyll-minifier gem:
 
-<pre><code>gem install jekyll-minifier</code></pre>
+```
+gem install jekyll-minifier
+```
 
-Then add this to your \_config.yml:
+Then add this to your `_config.yml`:
 
-<pre><code>plugins:
-    - jekyll-minifier
-</code></pre>
+```yaml
+plugins:
+  - jekyll-minifier
+```  
 
 Optionally, you can also add exclusions using:
 
-<pre><code>jekyll-minifier:
+```yaml
+jekyll-minifier:
   exclude: 'atom.xml' # Exclude files from processing - file name, glob pattern or array of file names and glob patterns
-</code></pre>
+```
 
 and toggle features and settings using:
 
-<pre><code>jekyll-minifier:
+```yaml
+jekyll-minifier:
   preserve_php: true                # Default: false
   remove_spaces_inside_tags: true   # Default: true
   remove_multi_spaces: true         # Default: true
@@ -52,21 +57,20 @@ and toggle features and settings using:
   compress_js_templates: false      # Default: false
   preserve_patterns:                # Default: (empty)
   uglifier_args:                    # Default: (empty)
-</code></pre>
+```
 
-js_args can be found in the the uglifier documentation at listed below
+`js_args` can be found in the the uglifier documentation at listed below
 
 Note: es6 has been implemented as experimental only via the upstream uglifier package.
 See https://github.com/lautis/uglifier for more information.
 
 To enable es6 syntax use:
 
-<pre><code>
+```yaml
 jekyll-minifier:
   uglifier_args:
     harmony: true
-
-</code></pre>
+```
 
 
 # Like my stuff?
