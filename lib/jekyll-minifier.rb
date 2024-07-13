@@ -135,7 +135,7 @@ module Jekyll
         end
         if ( compress )
           compressor = CSSminify2.new()
-          output_file(path, compressor.compress(content))
+          output_file(path, compressor.compress(content, linebreakpos: 0))
         else
           output_file(path, content)
         end
