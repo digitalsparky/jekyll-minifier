@@ -1,4 +1,4 @@
-require 'uglifier'
+require 'terser'
 require 'htmlcompressor'
 require 'cssminify2'
 require 'json/minify'
@@ -41,7 +41,7 @@ module Jekyll
         opts = @site.config['jekyll-minifier']
         if ( !opts.nil? )
           # Javascript Arguments
-          js_args[:uglifier_args] = Hash[opts['uglifier_args'].map{|(k,v)| [k.to_sym,v]}] if opts.has_key?('uglifier_args')
+          js_args[:terser_args] = Hash[opts['terser_args'].map{|(k,v)| [k.to_sym,v]}] if opts.has_key?('terser_args')
 
           # HTML Arguments
           html_args[:remove_spaces_inside_tags]   = opts['remove_spaces_inside_tags']  if opts.has_key?('remove_spaces_inside_tags')
@@ -69,10 +69,10 @@ module Jekyll
 
         html_args[:css_compressor]              = CSSminify2.new()
 
-        if ( !js_args[:uglifier_args].nil? )
-          html_args[:javascript_compressor]       = Uglifier.new(js_args[:uglifier_args])
+        if ( !js_args[:terser_args].nil? )
+          html_args[:javascript_compressor]       = ::Terser.new(js_args[:terser_args])
         else
-          html_args[:javascript_compressor]       = Uglifier.new()
+          html_args[:javascript_compressor]       = ::Terser.new()
         end
 
         compressor = HtmlCompressor::Compressor.new(html_args)
@@ -89,14 +89,14 @@ module Jekyll
         compress = true
         if ( !opts.nil? )
           compress                = opts['compress_javascript']                           if opts.has_key?('compress_javascript')
-          js_args[:uglifier_args] = Hash[opts['uglifier_args'].map{|(k,v)| [k.to_sym,v]}] if opts.has_key?('uglifier_args')
+          js_args[:terser_args] = Hash[opts['terser_args'].map{|(k,v)| [k.to_sym,v]}] if opts.has_key?('terser_args')
         end
 
         if ( compress )
-          if ( !js_args[:uglifier_args].nil? )
-            compressor = Uglifier.new(js_args[:uglifier_args])
+          if ( !js_args[:terser_args].nil? )
+            compressor = ::Terser.new(js_args[:terser_args])
           else
-            compressor = Uglifier.new()
+            compressor = ::Terser.new()
           end
 
           output_file(path, compressor.compile(content))
