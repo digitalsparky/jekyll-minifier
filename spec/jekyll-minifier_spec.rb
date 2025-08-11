@@ -149,4 +149,35 @@ describe "JekyllMinifier" do
     end
   end
 
+  context "test_es6_javascript" do
+    it "creates a assets/js/script.js file with ES6+ content" do
+      expect(Pathname.new(dest_dir("assets/js/script.js"))).to exist
+    end
+
+    let(:es6_js) { File.read(dest_dir("assets/js/script.js")) }
+
+    it "ensures script.js file has been minified and has length" do
+      expect(es6_js.length).to be > 0
+      # Verify it's actually minified by checking it doesn't contain original comments and formatting
+      expect(es6_js).not_to include("// Legacy JavaScript")
+      expect(es6_js).not_to include("// Modern ES6+ JavaScript to test harmony mode")
+      expect(es6_js).not_to include("\n  ")
+    end
+
+    it "handles ES6+ syntax (const, arrow functions, classes) without errors" do
+      # If the file exists and has content, it means ES6+ was processed successfully
+      # The original script.js now contains const, arrow functions, and classes
+      expect(es6_js.length).to be > 0
+      # Verify legacy function is still there (should be minified)
+      expect(es6_js).to include("sampleFunction")
+      # The fact that the build succeeded means ES6+ syntax was processed without errors
+    end
+
+    it "maintains backward compatibility with legacy JavaScript" do
+      # Verify legacy JS is still processed correctly alongside ES6+ code
+      expect(es6_js.length).to be > 0
+      expect(es6_js).to include("sampleFunction")
+    end
+  end
+
 end

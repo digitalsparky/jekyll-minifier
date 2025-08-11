@@ -69,10 +69,15 @@ module Jekyll
 
         html_args[:css_compressor]              = CSSminify2.new()
 
+        # Default Uglifier options with ES6+ support enabled
+        default_uglifier_args = { harmony: true }
+        
         if ( !js_args[:uglifier_args].nil? )
-          html_args[:javascript_compressor]       = Uglifier.new(js_args[:uglifier_args])
+          # Merge user options with defaults, allowing user to override
+          final_uglifier_args = default_uglifier_args.merge(js_args[:uglifier_args])
+          html_args[:javascript_compressor]       = Uglifier.new(final_uglifier_args)
         else
-          html_args[:javascript_compressor]       = Uglifier.new()
+          html_args[:javascript_compressor]       = Uglifier.new(default_uglifier_args)
         end
 
         compressor = HtmlCompressor::Compressor.new(html_args)
@@ -93,10 +98,15 @@ module Jekyll
         end
 
         if ( compress )
+          # Default Uglifier options with ES6+ support enabled
+          default_uglifier_args = { harmony: true }
+          
           if ( !js_args[:uglifier_args].nil? )
-            compressor = Uglifier.new(js_args[:uglifier_args])
+            # Merge user options with defaults, allowing user to override
+            final_uglifier_args = default_uglifier_args.merge(js_args[:uglifier_args])
+            compressor = Uglifier.new(final_uglifier_args)
           else
-            compressor = Uglifier.new()
+            compressor = Uglifier.new(default_uglifier_args)
           end
 
           output_file(path, compressor.compile(content))
