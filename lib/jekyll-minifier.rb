@@ -4,6 +4,329 @@ require 'cssminify2'
 require 'json/minify'
 
 module Jekyll
+  module Minifier
+    # Configuration manager class that eliminates repetitive configuration handling
+    # Provides clean accessors while maintaining 100% backward compatibility
+    class CompressionConfig
+      # Configuration key constants to eliminate magic strings
+      CONFIG_ROOT = 'jekyll-minifier'
+      
+      # HTML Compression Options
+      HTML_REMOVE_SPACES_INSIDE_TAGS = 'remove_spaces_inside_tags'
+      HTML_REMOVE_MULTI_SPACES = 'remove_multi_spaces'
+      HTML_REMOVE_COMMENTS = 'remove_comments'
+      HTML_REMOVE_INTERTAG_SPACES = 'remove_intertag_spaces'
+      HTML_REMOVE_QUOTES = 'remove_quotes'
+      HTML_COMPRESS_CSS = 'compress_css'
+      HTML_COMPRESS_JAVASCRIPT = 'compress_javascript'
+      HTML_SIMPLE_DOCTYPE = 'simple_doctype'
+      HTML_REMOVE_SCRIPT_ATTRIBUTES = 'remove_script_attributes'
+      HTML_REMOVE_STYLE_ATTRIBUTES = 'remove_style_attributes'
+      HTML_REMOVE_LINK_ATTRIBUTES = 'remove_link_attributes'
+      HTML_REMOVE_FORM_ATTRIBUTES = 'remove_form_attributes'
+      HTML_REMOVE_INPUT_ATTRIBUTES = 'remove_input_attributes'
+      HTML_REMOVE_JAVASCRIPT_PROTOCOL = 'remove_javascript_protocol'
+      HTML_REMOVE_HTTP_PROTOCOL = 'remove_http_protocol'
+      HTML_REMOVE_HTTPS_PROTOCOL = 'remove_https_protocol'
+      HTML_PRESERVE_LINE_BREAKS = 'preserve_line_breaks'
+      HTML_SIMPLE_BOOLEAN_ATTRIBUTES = 'simple_boolean_attributes'
+      HTML_COMPRESS_JS_TEMPLATES = 'compress_js_templates'
+      
+      # File Type Compression Toggles
+      COMPRESS_CSS = 'compress_css'
+      COMPRESS_JAVASCRIPT = 'compress_javascript'
+      COMPRESS_JSON = 'compress_json'
+      
+      # JavaScript/Terser Configuration
+      TERSER_ARGS = 'terser_args'
+      UGLIFIER_ARGS = 'uglifier_args' # Backward compatibility
+      
+      # Pattern Preservation
+      PRESERVE_PATTERNS = 'preserve_patterns'
+      PRESERVE_PHP = 'preserve_php'
+      
+      # File Exclusions
+      EXCLUDE = 'exclude'
+
+      def initialize(site_config)
+        @config = site_config || {}
+        @minifier_config = @config[CONFIG_ROOT] || {}
+        
+        # Pre-compute commonly used values for performance
+        @computed_values = {}
+        
+        # Pre-compile terser arguments for JavaScript compression
+        _compute_terser_args
+      end
+
+      # HTML Compression Configuration Accessors
+      def remove_spaces_inside_tags
+        get_boolean(HTML_REMOVE_SPACES_INSIDE_TAGS)
+      end
+
+      def remove_multi_spaces
+        get_boolean(HTML_REMOVE_MULTI_SPACES)
+      end
+
+      def remove_comments
+        get_boolean(HTML_REMOVE_COMMENTS, true) # Default to true
+      end
+
+      def remove_intertag_spaces
+        get_boolean(HTML_REMOVE_INTERTAG_SPACES)
+      end
+
+      def remove_quotes
+        get_boolean(HTML_REMOVE_QUOTES)
+      end
+
+      def compress_css_in_html
+        get_boolean(HTML_COMPRESS_CSS, true) # Default to true
+      end
+
+      def compress_javascript_in_html
+        get_boolean(HTML_COMPRESS_JAVASCRIPT, true) # Default to true
+      end
+
+      def simple_doctype
+        get_boolean(HTML_SIMPLE_DOCTYPE)
+      end
+
+      def remove_script_attributes
+        get_boolean(HTML_REMOVE_SCRIPT_ATTRIBUTES)
+      end
+
+      def remove_style_attributes
+        get_boolean(HTML_REMOVE_STYLE_ATTRIBUTES)
+      end
+
+      def remove_link_attributes
+        get_boolean(HTML_REMOVE_LINK_ATTRIBUTES)
+      end
+
+      def remove_form_attributes
+        get_boolean(HTML_REMOVE_FORM_ATTRIBUTES)
+      end
+
+      def remove_input_attributes
+        get_boolean(HTML_REMOVE_INPUT_ATTRIBUTES)
+      end
+
+      def remove_javascript_protocol
+        get_boolean(HTML_REMOVE_JAVASCRIPT_PROTOCOL)
+      end
+
+      def remove_http_protocol
+        get_boolean(HTML_REMOVE_HTTP_PROTOCOL)
+      end
+
+      def remove_https_protocol
+        get_boolean(HTML_REMOVE_HTTPS_PROTOCOL)
+      end
+
+      def preserve_line_breaks
+        get_boolean(HTML_PRESERVE_LINE_BREAKS)
+      end
+
+      def simple_boolean_attributes
+        get_boolean(HTML_SIMPLE_BOOLEAN_ATTRIBUTES)
+      end
+
+      def compress_js_templates
+        get_boolean(HTML_COMPRESS_JS_TEMPLATES)
+      end
+
+      # File Type Compression Toggles
+      def compress_css?
+        get_boolean(COMPRESS_CSS, true) # Default to true
+      end
+
+      def compress_javascript?
+        get_boolean(COMPRESS_JAVASCRIPT, true) # Default to true
+      end
+
+      def compress_json?
+        get_boolean(COMPRESS_JSON, true) # Default to true
+      end
+
+      # JavaScript/Terser Configuration
+      def terser_args
+        @computed_values[:terser_args]
+      end
+
+      def has_terser_args?
+        !terser_args.nil?
+      end
+
+      # Pattern Preservation
+      def preserve_patterns
+        patterns = get_array(PRESERVE_PATTERNS)
+        return patterns unless patterns.empty?
+        
+        # Return empty array if no patterns configured
+        []
+      end
+
+      def preserve_php?
+        get_boolean(PRESERVE_PHP, false)
+      end
+
+      def php_preserve_pattern
+        /<\?php.*?\?>/im
+      end
+
+      # File Exclusions
+      def exclude_patterns
+        get_array(EXCLUDE)
+      end
+
+      # Generate HTML compressor arguments hash
+      # Maintains exact same behavior as original implementation
+      def html_compressor_args
+        args = { 
+          remove_comments: true, 
+          compress_css: true, 
+          compress_javascript: true, 
+          preserve_patterns: [] 
+        }
+
+        # Apply configuration overrides - same logic as original
+        args[:remove_spaces_inside_tags] = remove_spaces_inside_tags unless remove_spaces_inside_tags.nil?
+        args[:remove_multi_spaces] = remove_multi_spaces unless remove_multi_spaces.nil?
+        args[:remove_comments] = remove_comments unless remove_comments.nil?
+        args[:remove_intertag_spaces] = remove_intertag_spaces unless remove_intertag_spaces.nil?
+        args[:remove_quotes] = remove_quotes unless remove_quotes.nil?
+        args[:compress_css] = compress_css_in_html unless compress_css_in_html.nil?
+        args[:compress_javascript] = compress_javascript_in_html unless compress_javascript_in_html.nil?
+        args[:simple_doctype] = simple_doctype unless simple_doctype.nil?
+        args[:remove_script_attributes] = remove_script_attributes unless remove_script_attributes.nil?
+        args[:remove_style_attributes] = remove_style_attributes unless remove_style_attributes.nil?
+        args[:remove_link_attributes] = remove_link_attributes unless remove_link_attributes.nil?
+        args[:remove_form_attributes] = remove_form_attributes unless remove_form_attributes.nil?
+        args[:remove_input_attributes] = remove_input_attributes unless remove_input_attributes.nil?
+        args[:remove_javascript_protocol] = remove_javascript_protocol unless remove_javascript_protocol.nil?
+        args[:remove_http_protocol] = remove_http_protocol unless remove_http_protocol.nil?
+        args[:remove_https_protocol] = remove_https_protocol unless remove_https_protocol.nil?
+        args[:preserve_line_breaks] = preserve_line_breaks unless preserve_line_breaks.nil?
+        args[:simple_boolean_attributes] = simple_boolean_attributes unless simple_boolean_attributes.nil?
+        args[:compress_js_templates] = compress_js_templates unless compress_js_templates.nil?
+
+        # Handle preserve patterns - exact same logic as original
+        args[:preserve_patterns] += [php_preserve_pattern] if preserve_php?
+        
+        configured_patterns = preserve_patterns
+        if !configured_patterns.empty? && configured_patterns.respond_to?(:map)
+          # Use the same compile_preserve_patterns method as original implementation
+          compiled_patterns = compile_preserve_patterns(configured_patterns)
+          args[:preserve_patterns] += compiled_patterns
+        end
+
+        args
+      end
+
+      private
+
+      def get_boolean(key, default = nil)
+        return default unless @minifier_config.has_key?(key)
+        @minifier_config[key]
+      end
+
+      def get_array(key)
+        value = @minifier_config[key]
+        return [] if value.nil?
+        return value if value.respond_to?(:to_a)
+        [value]
+      end
+
+      # Pre-compute terser arguments for performance
+      def _compute_terser_args
+        # Support both terser_args and uglifier_args for backward compatibility
+        # Exact same logic as original implementation
+        terser_options = @minifier_config[TERSER_ARGS] || @minifier_config[UGLIFIER_ARGS]
+        
+        if terser_options && terser_options.respond_to?(:map)
+          # Filter out Uglifier-specific options that don't have Terser equivalents
+          filtered_options = terser_options.reject { |k, v| k.to_s == 'harmony' }
+          @computed_values[:terser_args] = Hash[filtered_options.map{|(k,v)| [k.to_sym,v]}] unless filtered_options.empty?
+        else
+          @computed_values[:terser_args] = nil
+        end
+      end
+
+      # Import the compile_preserve_patterns method to maintain exact same behavior
+      # This will be made accessible through dependency injection
+      def compile_preserve_patterns(patterns)
+        return [] unless patterns.respond_to?(:map)
+        
+        compiled_patterns = []
+        patterns.each do |pattern|
+          begin
+            # ReDoS protection: validate pattern complexity and add timeout
+            if valid_regex_pattern?(pattern)
+              # Use timeout to prevent ReDoS attacks during compilation
+              regex = compile_regex_with_timeout(pattern, 1.0) # 1 second timeout
+              compiled_patterns << regex if regex
+            else
+              # Log invalid pattern but continue processing (graceful degradation)
+              Jekyll.logger.warn("Jekyll Minifier:", "Skipping potentially unsafe regex pattern: #{pattern.inspect}")
+            end
+          rescue => e
+            # Graceful error handling - log warning but don't fail the build
+            Jekyll.logger.warn("Jekyll Minifier:", "Failed to compile preserve pattern #{pattern.inspect}: #{e.message}")
+          end
+        end
+        
+        compiled_patterns
+      end
+
+      def valid_regex_pattern?(pattern)
+        return false unless pattern.is_a?(String)
+        return false if pattern.empty?
+        return false if pattern.strip.empty? # Reject whitespace-only patterns
+        return false if pattern.length > 1000 # Prevent excessively long patterns
+        
+        # Basic ReDoS vulnerability checks
+        # Check for nested quantifiers (e.g., (a+)+ or (a*)*) which are common ReDoS vectors
+        return false if pattern =~ /\([^)]*[+*]\)[+*]/
+        
+        # Check for alternation with overlapping patterns (e.g., (a|a)*) 
+        return false if pattern =~ /\([^)]*\|[^)]*\)[+*]/
+        
+        # Check for excessive nesting depth (simple heuristic)
+        open_parens = pattern.count('(')
+        return false if open_parens > 10
+        
+        # Check for excessive quantifier usage
+        quantifiers = pattern.scan(/[+*?]\??/).length
+        return false if quantifiers > 20
+        
+        true
+      end
+
+      def compile_regex_with_timeout(pattern, timeout_seconds)
+        # Create a thread to compile the regex with timeout
+        result = nil
+        thread = Thread.new do
+          begin
+            result = Regexp.new(pattern)
+          rescue RegexpError => e
+            Jekyll.logger.warn("Jekyll Minifier:", "Invalid regex pattern #{pattern.inspect}: #{e.message}")
+            result = nil
+          end
+        end
+        
+        # Wait for compilation with timeout
+        if thread.join(timeout_seconds)
+          result
+        else
+          # Kill the thread and return nil if timeout exceeded
+          thread.kill
+          Jekyll.logger.warn("Jekyll Minifier:", "Regex compilation timeout for pattern: #{pattern.inspect}")
+          nil
+        end
+      end
+    end
+  end
   module Compressor
     def output_file(dest, content)
       FileUtils.mkdir_p(File.dirname(dest))
@@ -35,49 +358,15 @@ module Jekyll
 
     def output_html(path, content)
       if production_environment?
-        html_args = { remove_comments: true, compress_css: true, compress_javascript: true, preserve_patterns: [] }
-        js_args = {}
+        config = Jekyll::Minifier::CompressionConfig.new(@site.config)
+        html_args = config.html_compressor_args
 
-        opts = @site.config['jekyll-minifier']
-        if ( !opts.nil? )
-          # Javascript Arguments (support both terser_args and uglifier_args for backward compatibility)
-          terser_options = opts['terser_args'] || opts['uglifier_args']
-          if terser_options && terser_options.respond_to?(:map)
-            # Filter out Uglifier-specific options that don't have Terser equivalents
-            filtered_options = terser_options.reject { |k, v| k.to_s == 'harmony' }
-            js_args[:terser_args] = Hash[filtered_options.map{|(k,v)| [k.to_sym,v]}] unless filtered_options.empty?
-          end
+        html_args[:css_compressor] = CSSminify2.new()
 
-          # HTML Arguments
-          html_args[:remove_spaces_inside_tags]   = opts['remove_spaces_inside_tags']  if opts.has_key?('remove_spaces_inside_tags')
-          html_args[:remove_multi_spaces]         = opts['remove_multi_spaces']        if opts.has_key?('remove_multi_spaces')
-          html_args[:remove_comments]             = opts['remove_comments']            if opts.has_key?('remove_comments')
-          html_args[:remove_intertag_spaces]      = opts['remove_intertag_spaces']     if opts.has_key?('remove_intertag_spaces')
-          html_args[:remove_quotes]               = opts['remove_quotes']              if opts.has_key?('remove_quotes')
-          html_args[:compress_css]                = opts['compress_css']               if opts.has_key?('compress_css')
-          html_args[:compress_javascript]         = opts['compress_javascript']        if opts.has_key?('compress_javascript')
-          html_args[:simple_doctype]              = opts['simple_doctype']             if opts.has_key?('simple_doctype')
-          html_args[:remove_script_attributes]    = opts['remove_script_attributes']   if opts.has_key?('remove_script_attributes')
-          html_args[:remove_style_attributes]     = opts['remove_style_attributes']    if opts.has_key?('remove_style_attributes')
-          html_args[:remove_link_attributes]      = opts['remove_link_attributes']     if opts.has_key?('remove_link_attributes')
-          html_args[:remove_form_attributes]      = opts['remove_form_attributes']     if opts.has_key?('remove_form_attributes')
-          html_args[:remove_input_attributes]     = opts['remove_input_attributes']    if opts.has_key?('remove_input_attributes')
-          html_args[:remove_javascript_protocol]  = opts['remove_javascript_protocol'] if opts.has_key?('remove_javascript_protocol')
-          html_args[:remove_http_protocol]        = opts['remove_http_protocol']       if opts.has_key?('remove_http_protocol')
-          html_args[:remove_https_protocol]       = opts['remove_https_protocol']      if opts.has_key?('remove_https_protocol')
-          html_args[:preserve_line_breaks]        = opts['preserve_line_breaks']       if opts.has_key?('preserve_line_breaks')
-          html_args[:simple_boolean_attributes]   = opts['simple_boolean_attributes']  if opts.has_key?('simple_boolean_attributes')
-          html_args[:compress_js_templates]       = opts['compress_js_templates']      if opts.has_key?('compress_js_templates')
-          html_args[:preserve_patterns]          += [/<\?php.*?\?>/im]                 if opts['preserve_php'] == true
-          html_args[:preserve_patterns]          += compile_preserve_patterns(opts['preserve_patterns']) if opts.has_key?('preserve_patterns') && opts['preserve_patterns'] && opts['preserve_patterns'].respond_to?(:map)
-        end
-
-        html_args[:css_compressor]              = CSSminify2.new()
-
-        if ( !js_args[:terser_args].nil? )
-          html_args[:javascript_compressor]       = ::Terser.new(js_args[:terser_args])
+        if config.has_terser_args?
+          html_args[:javascript_compressor] = ::Terser.new(config.terser_args)
         else
-          html_args[:javascript_compressor]       = ::Terser.new()
+          html_args[:javascript_compressor] = ::Terser.new()
         end
 
         compressor = HtmlCompressor::Compressor.new(html_args)
@@ -89,23 +378,11 @@ module Jekyll
 
     def output_js(path, content)
       if production_environment?
-        js_args  = {}
-        opts     = @site.config['jekyll-minifier']
-        compress = true
-        if ( !opts.nil? )
-          compress                = opts['compress_javascript']                           if opts.has_key?('compress_javascript')
-          # Support both terser_args and uglifier_args for backward compatibility
-          terser_options = opts['terser_args'] || opts['uglifier_args']
-          if terser_options && terser_options.respond_to?(:map)
-            # Filter out Uglifier-specific options that don't have Terser equivalents
-            filtered_options = terser_options.reject { |k, v| k.to_s == 'harmony' }
-            js_args[:terser_args] = Hash[filtered_options.map{|(k,v)| [k.to_sym,v]}] unless filtered_options.empty?
-          end
-        end
+        config = Jekyll::Minifier::CompressionConfig.new(@site.config)
 
-        if ( compress )
-          if ( !js_args[:terser_args].nil? )
-            compressor = ::Terser.new(js_args[:terser_args])
+        if config.compress_javascript?
+          if config.has_terser_args?
+            compressor = ::Terser.new(config.terser_args)
           else
             compressor = ::Terser.new()
           end
@@ -121,13 +398,9 @@ module Jekyll
 
     def output_json(path, content)
       if production_environment?
-        opts       = @site.config['jekyll-minifier']
-        compress = true
-        if ( !opts.nil? )
-          compress    = opts['compress_json']               if opts.has_key?('compress_json')
-        end
+        config = Jekyll::Minifier::CompressionConfig.new(@site.config)
 
-        if ( compress )
+        if config.compress_json?
           output_file(path, JSON.minify(content))
         else
           output_file(path, content)
@@ -139,12 +412,9 @@ module Jekyll
 
     def output_css(path, content)
       if production_environment?
-        opts       = @site.config['jekyll-minifier']
-        compress = true
-        if ( !opts.nil? )
-          compress    = opts['compress_css']               if opts.has_key?('compress_css')
-        end
-        if ( compress )
+        config = Jekyll::Minifier::CompressionConfig.new(@site.config)
+
+        if config.compress_css?
           compressor = CSSminify2.new()
           # Pass nil to disable line breaks completely for performance (PR #61)
           output_file(path, compressor.compress(content, nil))
@@ -154,7 +424,6 @@ module Jekyll
       else
         output_file(path, content)
       end
-
     end
 
     private
@@ -163,76 +432,23 @@ module Jekyll
       ENV['JEKYLL_ENV'] == "production"
     end
 
+    # Delegator methods for backward compatibility with existing tests
+    # These delegate to the CompressionConfig class methods
     def compile_preserve_patterns(patterns)
-      return [] unless patterns.respond_to?(:map)
-      
-      compiled_patterns = []
-      patterns.each do |pattern|
-        begin
-          # ReDoS protection: validate pattern complexity and add timeout
-          if valid_regex_pattern?(pattern)
-            # Use timeout to prevent ReDoS attacks during compilation
-            regex = compile_regex_with_timeout(pattern, 1.0) # 1 second timeout
-            compiled_patterns << regex if regex
-          else
-            # Log invalid pattern but continue processing (graceful degradation)
-            Jekyll.logger.warn("Jekyll Minifier:", "Skipping potentially unsafe regex pattern: #{pattern.inspect}")
-          end
-        rescue => e
-          # Graceful error handling - log warning but don't fail the build
-          Jekyll.logger.warn("Jekyll Minifier:", "Failed to compile preserve pattern #{pattern.inspect}: #{e.message}")
-        end
-      end
-      
-      compiled_patterns
+      config = Jekyll::Minifier::CompressionConfig.new(@site.config)
+      config.send(:compile_preserve_patterns, patterns)
     end
 
     def valid_regex_pattern?(pattern)
-      return false unless pattern.is_a?(String)
-      return false if pattern.empty?
-      return false if pattern.strip.empty? # Reject whitespace-only patterns
-      return false if pattern.length > 1000 # Prevent excessively long patterns
-      
-      # Basic ReDoS vulnerability checks
-      # Check for nested quantifiers (e.g., (a+)+ or (a*)*) which are common ReDoS vectors
-      return false if pattern =~ /\([^)]*[+*]\)[+*]/
-      
-      # Check for alternation with overlapping patterns (e.g., (a|a)*) 
-      return false if pattern =~ /\([^)]*\|[^)]*\)[+*]/
-      
-      # Check for excessive nesting depth (simple heuristic)
-      open_parens = pattern.count('(')
-      return false if open_parens > 10
-      
-      # Check for excessive quantifier usage
-      quantifiers = pattern.scan(/[+*?]\??/).length
-      return false if quantifiers > 20
-      
-      true
+      config = Jekyll::Minifier::CompressionConfig.new(@site.config)
+      config.send(:valid_regex_pattern?, pattern)
     end
 
     def compile_regex_with_timeout(pattern, timeout_seconds)
-      # Create a thread to compile the regex with timeout
-      result = nil
-      thread = Thread.new do
-        begin
-          result = Regexp.new(pattern)
-        rescue RegexpError => e
-          Jekyll.logger.warn("Jekyll Minifier:", "Invalid regex pattern #{pattern.inspect}: #{e.message}")
-          result = nil
-        end
-      end
-      
-      # Wait for compilation with timeout
-      if thread.join(timeout_seconds)
-        result
-      else
-        # Kill the thread and return nil if timeout exceeded
-        thread.kill
-        Jekyll.logger.warn("Jekyll Minifier:", "Regex compilation timeout for pattern: #{pattern.inspect}")
-        nil
-      end
+      config = Jekyll::Minifier::CompressionConfig.new(@site.config)
+      config.send(:compile_regex_with_timeout, pattern, timeout_seconds)
     end
+
 
     def exclude?(dest, dest_path)
       file_name = dest_path.slice(dest.length+1..dest_path.length)
@@ -240,7 +456,10 @@ module Jekyll
     end
 
     def exclude
-      @exclude ||= Array(@site.config.dig('jekyll-minifier', 'exclude'))
+      @exclude ||= begin
+        config = Jekyll::Minifier::CompressionConfig.new(@site.config)
+        config.exclude_patterns
+      end
     end
   end
 
