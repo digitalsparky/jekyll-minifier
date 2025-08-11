@@ -1,5 +1,5 @@
 # Use official Ruby image with a specific version for consistency
-FROM ruby:3.1-slim
+FROM ruby:3.3.9-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
