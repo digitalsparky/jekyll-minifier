@@ -69,7 +69,7 @@ module Jekyll
           html_args[:simple_boolean_attributes]   = opts['simple_boolean_attributes']  if opts.has_key?('simple_boolean_attributes')
           html_args[:compress_js_templates]       = opts['compress_js_templates']      if opts.has_key?('compress_js_templates')
           html_args[:preserve_patterns]          += [/<\?php.*?\?>/im]                 if opts['preserve_php'] == true
-          html_args[:preserve_patterns]          += opts['preserve_patterns'].map { |pattern| Regexp.new(pattern)} if opts.has_key?('preserve_patterns') && opts['preserve_patterns'] && opts['preserve_patterns'].respond_to?(:map)
+          html_args[:preserve_patterns]          += compile_preserve_patterns(opts['preserve_patterns']) if opts.has_key?('preserve_patterns') && opts['preserve_patterns'] && opts['preserve_patterns'].respond_to?(:map)
         end
 
         html_args[:css_compressor]              = CSSminify2.new()
@@ -158,6 +158,77 @@ module Jekyll
     end
 
     private
+
+    def compile_preserve_patterns(patterns)
+      return [] unless patterns.respond_to?(:map)
+      
+      compiled_patterns = []
+      patterns.each do |pattern|
+        begin
+          # ReDoS protection: validate pattern complexity and add timeout
+          if valid_regex_pattern?(pattern)
+            # Use timeout to prevent ReDoS attacks during compilation
+            regex = compile_regex_with_timeout(pattern, 1.0) # 1 second timeout
+            compiled_patterns << regex if regex
+          else
+            # Log invalid pattern but continue processing (graceful degradation)
+            Jekyll.logger.warn("Jekyll Minifier:", "Skipping potentially unsafe regex pattern: #{pattern.inspect}")
+          end
+        rescue => e
+          # Graceful error handling - log warning but don't fail the build
+          Jekyll.logger.warn("Jekyll Minifier:", "Failed to compile preserve pattern #{pattern.inspect}: #{e.message}")
+        end
+      end
+      
+      compiled_patterns
+    end
+
+    def valid_regex_pattern?(pattern)
+      return false unless pattern.is_a?(String)
+      return false if pattern.empty?
+      return false if pattern.strip.empty? # Reject whitespace-only patterns
+      return false if pattern.length > 1000 # Prevent excessively long patterns
+      
+      # Basic ReDoS vulnerability checks
+      # Check for nested quantifiers (e.g., (a+)+ or (a*)*) which are common ReDoS vectors
+      return false if pattern =~ /\([^)]*[+*]\)[+*]/
+      
+      # Check for alternation with overlapping patterns (e.g., (a|a)*) 
+      return false if pattern =~ /\([^)]*\|[^)]*\)[+*]/
+      
+      # Check for excessive nesting depth (simple heuristic)
+      open_parens = pattern.count('(')
+      return false if open_parens > 10
+      
+      # Check for excessive quantifier usage
+      quantifiers = pattern.scan(/[+*?]\??/).length
+      return false if quantifiers > 20
+      
+      true
+    end
+
+    def compile_regex_with_timeout(pattern, timeout_seconds)
+      # Create a thread to compile the regex with timeout
+      result = nil
+      thread = Thread.new do
+        begin
+          result = Regexp.new(pattern)
+        rescue RegexpError => e
+          Jekyll.logger.warn("Jekyll Minifier:", "Invalid regex pattern #{pattern.inspect}: #{e.message}")
+          result = nil
+        end
+      end
+      
+      # Wait for compilation with timeout
+      if thread.join(timeout_seconds)
+        result
+      else
+        # Kill the thread and return nil if timeout exceeded
+        thread.kill
+        Jekyll.logger.warn("Jekyll Minifier:", "Regex compilation timeout for pattern: #{pattern.inspect}")
+        nil
+      end
+    end
 
     def exclude?(dest, dest_path)
       file_name = dest_path.slice(dest.length+1..dest_path.length)
