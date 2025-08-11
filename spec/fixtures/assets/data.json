@@ -1,0 +1,25 @@
+{
+  "name": "Jekyll Minifier Test",
+  "version": "0.2.0",
+  "description": "This is a test JSON file to verify JSON minification functionality.",
+  "features": [
+    "HTML minification",
+    "CSS compression",
+    "JavaScript optimization",
+    "JSON minification"
+  ],
+  "config": {
+    "enabled": true,
+    "debug": false,
+    "compression_level": "maximum",
+    "preserve_patterns": [
+      "<!--",
+      "-->"
+    ]
+  },
+  "metadata": {
+    "created_by": "Jekyll Minifier Test Suite",
+    "last_updated": "2025-08-11",
+    "test_purpose": "Validate JSON minification removes whitespace and formatting while preserving data structure"
+  }
+}
