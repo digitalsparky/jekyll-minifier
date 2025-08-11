@@ -63,6 +63,14 @@ describe "JekyllMinifier" do
     it "ensures assets/css/style.css file has length" do
       expect(file.length).to be > 0
     end
+
+    it "ensures CSS is minified without line breaks for performance (PR #61 integration)" do
+      # This test validates PR #61: CSS minification without line breaks for better performance
+      # The linebreakpos: 0 parameter should eliminate all line breaks in CSS output
+      expect(file).not_to include("\n"), "CSS should be minified to a single line for performance optimization"
+      expect(file).not_to include("\r"), "CSS should not contain carriage returns"
+      expect(file.split("\n").length).to eq(1), "CSS should be compressed to exactly one line"
+    end
   end
 
   context "test_404" do
@@ -177,6 +185,28 @@ describe "JekyllMinifier" do
       # Verify legacy JS is still processed correctly alongside ES6+ code
       expect(es6_js.length).to be > 0
       expect(es6_js).to include("sampleFunction")
+    end
+  end
+
+  context "test_backward_compatibility" do
+    let(:overrides) { 
+      {
+        "jekyll-minifier" => {
+          "uglifier_args" => { "harmony" => true }
+        }
+      }
+    }
+    
+    let(:js_content) { File.read(dest_dir("assets/js/script.js")) }
+    
+    it "supports uglifier_args for backward compatibility" do
+      # If the build succeeds with uglifier_args in config, backward compatibility works
+      expect(Pathname.new(dest_dir("assets/js/script.js"))).to exist
+      
+      # Verify the JS file was processed and has content
+      expect(js_content.length).to be > 0
+      # Verify it's minified (no comments or excessive whitespace)
+      expect(js_content).not_to include("// Legacy JavaScript")
     end
   end
 

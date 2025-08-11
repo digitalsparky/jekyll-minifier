@@ -1,8 +1,15 @@
 # jekyll-minifier [![Build Status](https://travis-ci.org/digitalsparky/jekyll-minifier.svg?branch=master)](https://travis-ci.org/digitalsparky/jekyll-minifier) [![Gem Version](https://badge.fury.io/rb/jekyll-minifier.svg)](http://badge.fury.io/rb/jekyll-minifier)
 
-Requires Ruby 2.3+
+Requires Ruby 3.0+
 
-Minifies HTML, XML, CSS, JSON and JavaScript both inline and as separate files utilising yui-compressor and htmlcompressor.
+## Key Features
+
+- **Modern ES6+ Support**: Now uses Terser instead of Uglifier for better modern JavaScript support
+- **Production-Only**: Only runs when `JEKYLL_ENV="production"` for optimal development experience
+- **Comprehensive Minification**: Handles HTML, XML, CSS, JSON, and JavaScript files
+- **Backward Compatible**: Supports legacy `uglifier_args` configuration for easy migration
+
+Minifies HTML, XML, CSS, JSON and JavaScript both inline and as separate files utilising terser, cssminify2, json-minify and htmlcompressor.
 
 This was created due to the previous minifier (jekyll-press) not being CSS3 compatible, which made me frown.
 
@@ -51,22 +58,12 @@ and toggle features and settings using:
   simple_boolean_attributes: false  # Default: false
   compress_js_templates: false      # Default: false
   preserve_patterns:                # Default: (empty)
-  uglifier_args:                    # Default: (empty)
+  terser_args:                      # Default: (empty)
 </code></pre>
 
-js_args can be found in the the uglifier documentation at listed below
+terser_args can be found in the [terser-ruby](https://github.com/ahorek/terser-ruby) documentation.
 
-Note: es6 has been implemented as experimental only via the upstream uglifier package.
-See https://github.com/lautis/uglifier for more information.
-
-To enable es6 syntax use:
-
-<pre><code>
-jekyll-minifier:
-  uglifier_args:
-    harmony: true
-
-</code></pre>
+Note: For backward compatibility, `uglifier_args` is also supported and will be treated as `terser_args`.
 
 
 # Like my stuff?

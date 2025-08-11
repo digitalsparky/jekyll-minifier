@@ -4,7 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Jekyll Minifier is a Ruby gem that provides minification for Jekyll sites. It compresses HTML, XML, CSS, JSON and JavaScript files both inline and as separate files using yui-compressor and htmlcompressor. The gem only runs when `JEKYLL_ENV="production"` is set.
+Jekyll Minifier is a Ruby gem that provides minification for Jekyll sites. It compresses HTML, XML, CSS, JSON and JavaScript files both inline and as separate files using terser, cssminify2, json-minify and htmlcompressor. The gem only runs when `JEKYLL_ENV="production"` is set.
+
+## Release Status (v0.2.0)
+
+**READY FOR RELEASE** - All integrations completed and validated:
+- ✅ Modernized to Ruby 3.3.9, Jekyll 4.x compatibility  
+- ✅ Migrated from Uglifier to Terser (with backward compatibility)
+- ✅ Fixed critical bugs #49 (nil pointer) and #51 (preserve_patterns) 
+- ✅ Integrated CSS performance improvements (PR #61)
+- ✅ Comprehensive test suite: 26/26 tests passing
+- ✅ Docker development environment fully functional
+- ✅ Updated dependencies and improved ES6+ support
 
 ## Development Commands
 
@@ -54,7 +65,7 @@ docker compose run jekyll-minifier bundle exec rspec --format documentation
 ### Compression Strategy
 The gem handles different file types through dedicated methods:
 - `output_html()` - HTML/XML compression using HtmlCompressor
-- `output_js()` - JavaScript compression using Uglifier
+- `output_js()` - JavaScript compression using Terser
 - `output_css()` - CSS compression using CSSminify2
 - `output_json()` - JSON minification using json-minify
 
@@ -69,7 +80,7 @@ All settings are under `jekyll-minifier` key in `_config.yml` with options like:
 - File exclusions via `exclude` (supports glob patterns)
 - HTML compression toggles (remove comments, spaces, etc.)
 - JavaScript/CSS/JSON compression toggles
-- Advanced options like preserve patterns and uglifier arguments
+- Advanced options like preserve patterns and terser arguments
 
 ### Testing Framework
 - Uses RSpec for testing

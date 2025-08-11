@@ -1,4 +1,4 @@
-require 'uglifier'
+require 'terser'
 require 'htmlcompressor'
 require 'cssminify2'
 require 'json/minify'
@@ -40,8 +40,13 @@ module Jekyll
 
         opts = @site.config['jekyll-minifier']
         if ( !opts.nil? )
-          # Javascript Arguments
-          js_args[:uglifier_args] = Hash[opts['uglifier_args'].map{|(k,v)| [k.to_sym,v]}] if opts.has_key?('uglifier_args') && opts['uglifier_args'] && opts['uglifier_args'].respond_to?(:map)
+          # Javascript Arguments (support both terser_args and uglifier_args for backward compatibility)
+          terser_options = opts['terser_args'] || opts['uglifier_args']
+          if terser_options && terser_options.respond_to?(:map)
+            # Filter out Uglifier-specific options that don't have Terser equivalents
+            filtered_options = terser_options.reject { |k, v| k.to_s == 'harmony' }
+            js_args[:terser_args] = Hash[filtered_options.map{|(k,v)| [k.to_sym,v]}] unless filtered_options.empty?
+          end
 
           # HTML Arguments
           html_args[:remove_spaces_inside_tags]   = opts['remove_spaces_inside_tags']  if opts.has_key?('remove_spaces_inside_tags')
@@ -69,15 +74,10 @@ module Jekyll
 
         html_args[:css_compressor]              = CSSminify2.new()
 
-        # Default Uglifier options with ES6+ support enabled
-        default_uglifier_args = { harmony: true }
-        
-        if ( !js_args[:uglifier_args].nil? )
-          # Merge user options with defaults, allowing user to override
-          final_uglifier_args = default_uglifier_args.merge(js_args[:uglifier_args])
-          html_args[:javascript_compressor]       = Uglifier.new(final_uglifier_args)
+        if ( !js_args[:terser_args].nil? )
+          html_args[:javascript_compressor]       = ::Terser.new(js_args[:terser_args])
         else
-          html_args[:javascript_compressor]       = Uglifier.new(default_uglifier_args)
+          html_args[:javascript_compressor]       = ::Terser.new()
         end
 
         compressor = HtmlCompressor::Compressor.new(html_args)
@@ -94,19 +94,20 @@ module Jekyll
         compress = true
         if ( !opts.nil? )
           compress                = opts['compress_javascript']                           if opts.has_key?('compress_javascript')
-          js_args[:uglifier_args] = Hash[opts['uglifier_args'].map{|(k,v)| [k.to_sym,v]}] if opts.has_key?('uglifier_args') && opts['uglifier_args'] && opts['uglifier_args'].respond_to?(:map)
+          # Support both terser_args and uglifier_args for backward compatibility
+          terser_options = opts['terser_args'] || opts['uglifier_args']
+          if terser_options && terser_options.respond_to?(:map)
+            # Filter out Uglifier-specific options that don't have Terser equivalents
+            filtered_options = terser_options.reject { |k, v| k.to_s == 'harmony' }
+            js_args[:terser_args] = Hash[filtered_options.map{|(k,v)| [k.to_sym,v]}] unless filtered_options.empty?
+          end
         end
 
         if ( compress )
-          # Default Uglifier options with ES6+ support enabled
-          default_uglifier_args = { harmony: true }
-          
-          if ( !js_args[:uglifier_args].nil? )
-            # Merge user options with defaults, allowing user to override
-            final_uglifier_args = default_uglifier_args.merge(js_args[:uglifier_args])
-            compressor = Uglifier.new(final_uglifier_args)
+          if ( !js_args[:terser_args].nil? )
+            compressor = ::Terser.new(js_args[:terser_args])
           else
-            compressor = Uglifier.new(default_uglifier_args)
+            compressor = ::Terser.new()
           end
 
           output_file(path, compressor.compile(content))
@@ -145,7 +146,8 @@ module Jekyll
         end
         if ( compress )
           compressor = CSSminify2.new()
-          output_file(path, compressor.compress(content))
+          # Pass nil to disable line breaks completely for performance (PR #61)
+          output_file(path, compressor.compress(content, nil))
         else
           output_file(path, content)
         end
