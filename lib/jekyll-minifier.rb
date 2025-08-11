@@ -41,7 +41,7 @@ module Jekyll
         opts = @site.config['jekyll-minifier']
         if ( !opts.nil? )
           # Javascript Arguments
-          js_args[:uglifier_args] = Hash[opts['uglifier_args'].map{|(k,v)| [k.to_sym,v]}] if opts.has_key?('uglifier_args')
+          js_args[:uglifier_args] = Hash[opts['uglifier_args'].map{|(k,v)| [k.to_sym,v]}] if opts.has_key?('uglifier_args') && opts['uglifier_args'] && opts['uglifier_args'].respond_to?(:map)
 
           # HTML Arguments
           html_args[:remove_spaces_inside_tags]   = opts['remove_spaces_inside_tags']  if opts.has_key?('remove_spaces_inside_tags')
@@ -64,7 +64,7 @@ module Jekyll
           html_args[:simple_boolean_attributes]   = opts['simple_boolean_attributes']  if opts.has_key?('simple_boolean_attributes')
           html_args[:compress_js_templates]       = opts['compress_js_templates']      if opts.has_key?('compress_js_templates')
           html_args[:preserve_patterns]          += [/<\?php.*?\?>/im]                 if opts['preserve_php'] == true
-          html_args[:preserve_patterns]          += opts['preserve_patterns'].map { |pattern| Regexp.new(pattern)} if opts.has_key?('preserve_patterns')
+          html_args[:preserve_patterns]          += opts['preserve_patterns'].map { |pattern| Regexp.new(pattern)} if opts.has_key?('preserve_patterns') && opts['preserve_patterns'] && opts['preserve_patterns'].respond_to?(:map)
         end
 
         html_args[:css_compressor]              = CSSminify2.new()
@@ -89,7 +89,7 @@ module Jekyll
         compress = true
         if ( !opts.nil? )
           compress                = opts['compress_javascript']                           if opts.has_key?('compress_javascript')
-          js_args[:uglifier_args] = Hash[opts['uglifier_args'].map{|(k,v)| [k.to_sym,v]}] if opts.has_key?('uglifier_args')
+          js_args[:uglifier_args] = Hash[opts['uglifier_args'].map{|(k,v)| [k.to_sym,v]}] if opts.has_key?('uglifier_args') && opts['uglifier_args'] && opts['uglifier_args'].respond_to?(:map)
         end
 
         if ( compress )
