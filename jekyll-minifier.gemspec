@@ -8,7 +8,7 @@ Gem::Specification.new do |gem|
 
   gem.authors     = ["DigitalSparky"]
   gem.email       = ["matthew@spurrier.com.au"]
-  gem.description = %q{Jekyll Minifier using htmlcompressor for html, uglifier for js and css}
+  gem.description = %q{Jekyll Minifier using htmlcompressor for html, terser for js, and cssminify2 for css}
   gem.summary     = %q{Jekyll Minifier for html, css, and javascript}
   gem.homepage    = "http://github.com/digitalsparky/jekyll-minifier"
   gem.license     = "GPL-3.0-or-later"
@@ -26,7 +26,7 @@ Gem::Specification.new do |gem|
   end
 
   gem.add_dependency "jekyll", "~> 4.0"
-  gem.add_dependency "uglifier", "~> 4.2"
+  gem.add_dependency "terser", "~> 1.2.3"
   gem.add_dependency "htmlcompressor", "~> 0.4"
   gem.add_dependency "cssminify2", "~> 2.0.1"
   gem.add_dependency "json-minify", "~> 0.0.3"

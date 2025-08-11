@@ -180,4 +180,26 @@ describe "JekyllMinifier" do
     end
   end
 
+  context "test_backward_compatibility" do
+    let(:overrides) { 
+      {
+        "jekyll-minifier" => {
+          "uglifier_args" => { "harmony" => true }
+        }
+      }
+    }
+    
+    let(:js_content) { File.read(dest_dir("assets/js/script.js")) }
+    
+    it "supports uglifier_args for backward compatibility" do
+      # If the build succeeds with uglifier_args in config, backward compatibility works
+      expect(Pathname.new(dest_dir("assets/js/script.js"))).to exist
+      
+      # Verify the JS file was processed and has content
+      expect(js_content.length).to be > 0
+      # Verify it's minified (no comments or excessive whitespace)
+      expect(js_content).not_to include("// Legacy JavaScript")
+    end
+  end
+
 end
