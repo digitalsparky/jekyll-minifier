@@ -146,7 +146,8 @@ module Jekyll
         end
         if ( compress )
           compressor = CSSminify2.new()
-          output_file(path, compressor.compress(content, 0))
+          # Pass nil to disable line breaks completely for performance (PR #61)
+          output_file(path, compressor.compress(content, nil))
         else
           output_file(path, content)
         end

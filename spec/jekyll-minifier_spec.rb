@@ -63,6 +63,14 @@ describe "JekyllMinifier" do
     it "ensures assets/css/style.css file has length" do
       expect(file.length).to be > 0
     end
+
+    it "ensures CSS is minified without line breaks for performance (PR #61 integration)" do
+      # This test validates PR #61: CSS minification without line breaks for better performance
+      # The linebreakpos: 0 parameter should eliminate all line breaks in CSS output
+      expect(file).not_to include("\n"), "CSS should be minified to a single line for performance optimization"
+      expect(file).not_to include("\r"), "CSS should not contain carriage returns"
+      expect(file.split("\n").length).to eq(1), "CSS should be compressed to exactly one line"
+    end
   end
 
   context "test_404" do
