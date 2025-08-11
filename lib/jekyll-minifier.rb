@@ -34,7 +34,7 @@ module Jekyll
     end
 
     def output_html(path, content)
-      if ( ENV['JEKYLL_ENV'] == "production" )
+      if production_environment?
         html_args = { remove_comments: true, compress_css: true, compress_javascript: true, preserve_patterns: [] }
         js_args = {}
 
@@ -88,7 +88,7 @@ module Jekyll
     end
 
     def output_js(path, content)
-      if ( ENV['JEKYLL_ENV'] == "production" )
+      if production_environment?
         js_args  = {}
         opts     = @site.config['jekyll-minifier']
         compress = true
@@ -120,7 +120,7 @@ module Jekyll
     end
 
     def output_json(path, content)
-      if ( ENV['JEKYLL_ENV'] == "production" )
+      if production_environment?
         opts       = @site.config['jekyll-minifier']
         compress = true
         if ( !opts.nil? )
@@ -138,7 +138,7 @@ module Jekyll
     end
 
     def output_css(path, content)
-      if ( ENV['JEKYLL_ENV'] == "production" )
+      if production_environment?
         opts       = @site.config['jekyll-minifier']
         compress = true
         if ( !opts.nil? )
@@ -158,6 +158,10 @@ module Jekyll
     end
 
     private
+
+    def production_environment?
+      ENV['JEKYLL_ENV'] == "production"
+    end
 
     def compile_preserve_patterns(patterns)
       return [] unless patterns.respond_to?(:map)
