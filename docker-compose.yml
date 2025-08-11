@@ -1,0 +1,42 @@
+services:
+  jekyll-minifier:
+    build: .
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+    environment:
+      - JEKYLL_ENV=production
+    command: bash -c "bundle install && bundle exec rspec"
+    
+  # Service for development with shell access
+  dev:
+    build: .
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+    environment:
+      - JEKYLL_ENV=production
+    command: bash
+    stdin_open: true
+    tty: true
+
+  # Service for building the gem
+  build:
+    build: .
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+    command: bash -c "bundle install && gem build jekyll-minifier.gemspec"
+
+  # Service for testing in development environment
+  test-dev:
+    build: .
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+    environment:
+      - JEKYLL_ENV=development
+    command: bash -c "bundle install && bundle exec rspec"
+
+volumes:
+  bundle_cache:
