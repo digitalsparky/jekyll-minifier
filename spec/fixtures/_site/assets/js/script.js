@@ -1,1 +1,0 @@
-var sampleFunction=function(){console.log("This is sample.")};sampleFunction();const modernFunction=()=>{return"Hello ES6+"};class TestClass{constructor(n){this.value=n}getValue(){return this.value}}const instance=new TestClass("test");console.log(modernFunction()),console.log(instance.getValue());

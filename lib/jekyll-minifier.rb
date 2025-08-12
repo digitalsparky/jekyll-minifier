@@ -5,6 +5,20 @@ require 'json/minify'
 
 module Jekyll
   module Minifier
+    # Wrapper class to provide enhanced CSS compression for HTML compressor
+    # This maintains the same interface as CSSminify2 while adding enhanced features
+    class CSSEnhancedWrapper
+      def initialize(enhanced_options = {})
+        @enhanced_options = enhanced_options
+      end
+
+      # Interface method expected by HtmlCompressor
+      # @param [String] css CSS content to compress
+      # @return [String] Compressed CSS
+      def compress(css)
+        CSSminify2.compress_enhanced(css, @enhanced_options)
+      end
+    end
     # Configuration manager class that eliminates repetitive configuration handling
     # Provides clean accessors while maintaining 100% backward compatibility
     class CompressionConfig
@@ -36,6 +50,14 @@ module Jekyll
       COMPRESS_CSS = 'compress_css'
       COMPRESS_JAVASCRIPT = 'compress_javascript'
       COMPRESS_JSON = 'compress_json'
+      
+      # Enhanced CSS Compression Options (cssminify2 v2.1.0+)
+      CSS_MERGE_DUPLICATE_SELECTORS = 'css_merge_duplicate_selectors'
+      CSS_OPTIMIZE_SHORTHAND_PROPERTIES = 'css_optimize_shorthand_properties'
+      CSS_ADVANCED_COLOR_OPTIMIZATION = 'css_advanced_color_optimization'
+      CSS_PRESERVE_IE_HACKS = 'css_preserve_ie_hacks'
+      CSS_COMPRESS_VARIABLES = 'css_compress_variables'
+      CSS_ENHANCED_MODE = 'css_enhanced_mode'
       
       # JavaScript/Terser Configuration
       TERSER_ARGS = 'terser_args'
@@ -147,6 +169,44 @@ module Jekyll
 
       def compress_json?
         get_boolean(COMPRESS_JSON, true) # Default to true
+      end
+
+      # Enhanced CSS Compression Configuration
+      def css_enhanced_mode?
+        get_boolean(CSS_ENHANCED_MODE, false) # Default to false for backward compatibility
+      end
+
+      def css_merge_duplicate_selectors?
+        get_boolean(CSS_MERGE_DUPLICATE_SELECTORS, false)
+      end
+
+      def css_optimize_shorthand_properties?
+        get_boolean(CSS_OPTIMIZE_SHORTHAND_PROPERTIES, false)
+      end
+
+      def css_advanced_color_optimization?
+        get_boolean(CSS_ADVANCED_COLOR_OPTIMIZATION, false)
+      end
+
+      def css_preserve_ie_hacks?
+        get_boolean(CSS_PRESERVE_IE_HACKS, true) # Default to true to preserve IE hacks
+      end
+
+      def css_compress_variables?
+        get_boolean(CSS_COMPRESS_VARIABLES, false)
+      end
+
+      # Generate enhanced CSS compression options hash
+      def css_enhanced_options
+        return nil unless css_enhanced_mode?
+        
+        {
+          merge_duplicate_selectors: css_merge_duplicate_selectors?,
+          optimize_shorthand_properties: css_optimize_shorthand_properties?,
+          advanced_color_optimization: css_advanced_color_optimization?,
+          preserve_ie_hacks: css_preserve_ie_hacks?,
+          compress_css_variables: css_compress_variables?
+        }
       end
 
       # JavaScript/Terser Configuration
@@ -361,7 +421,13 @@ module Jekyll
         config = Jekyll::Minifier::CompressionConfig.new(@site.config)
         html_args = config.html_compressor_args
 
-        html_args[:css_compressor] = CSSminify2.new()
+        # Configure CSS compressor based on enhanced mode setting
+        if config.css_enhanced_mode? && config.css_enhanced_options
+          # Create a wrapper for enhanced CSS compression in HTML
+          html_args[:css_compressor] = Jekyll::Minifier::CSSEnhancedWrapper.new(config.css_enhanced_options)
+        else
+          html_args[:css_compressor] = CSSminify2.new()
+        end
 
         if config.has_terser_args?
           html_args[:javascript_compressor] = ::Terser.new(config.terser_args)
@@ -415,9 +481,16 @@ module Jekyll
         config = Jekyll::Minifier::CompressionConfig.new(@site.config)
 
         if config.compress_css?
-          compressor = CSSminify2.new()
-          # Pass nil to disable line breaks completely for performance (PR #61)
-          output_file(path, compressor.compress(content, nil))
+          if config.css_enhanced_mode? && config.css_enhanced_options
+            # Use enhanced compression with configurable options
+            compressed_content = CSSminify2.compress_enhanced(content, config.css_enhanced_options)
+          else
+            # Use standard compression (maintains backward compatibility)
+            compressor = CSSminify2.new()
+            # Pass nil to disable line breaks completely for performance (PR #61)
+            compressed_content = compressor.compress(content, nil)
+          end
+          output_file(path, compressed_content)
         else
           output_file(path, content)
         end

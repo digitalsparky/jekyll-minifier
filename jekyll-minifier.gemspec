@@ -28,7 +28,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency "jekyll", "~> 4.0"
   gem.add_dependency "terser", "~> 1.2.3"
   gem.add_dependency "htmlcompressor", "~> 0.4"
-  gem.add_dependency "cssminify2", "~> 2.0.1"
+  gem.add_dependency "cssminify2", "~> 2.1.0"
   gem.add_dependency "json-minify", "~> 0.0.3"
 
   gem.add_development_dependency "rake", "~> 13.3"
