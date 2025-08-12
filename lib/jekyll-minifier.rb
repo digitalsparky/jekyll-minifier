@@ -299,6 +299,112 @@ module Jekyll
         true
       end
     end
+
+    # CompressorCache module provides thread-safe caching for compressor objects
+    # to improve performance by reusing configured compressor instances
+    module CompressorCache
+      module_function
+
+      # Cache storage with thread-safe access
+      @cache_mutex = Mutex.new
+      @compressor_caches = {
+        css: {},
+        js: {},
+        html: {}
+      }
+      @cache_stats = {
+        hits: 0,
+        misses: 0,
+        evictions: 0
+      }
+
+      # Maximum cache size per compressor type (reasonable memory limit)
+      MAX_CACHE_SIZE = 10
+
+      # Get cached compressor or create and cache new one
+      # @param [Symbol] type Compressor type (:css, :js, :html)
+      # @param [String] cache_key Unique key for this configuration
+      # @param [Proc] factory_block Block that creates the compressor if not cached
+      # @return [Object] Cached or newly created compressor instance
+      def get_or_create(type, cache_key, &factory_block)
+        @cache_mutex.synchronize do
+          cache = @compressor_caches[type]
+          
+          if cache.key?(cache_key)
+            # Cache hit - move to end for LRU
+            compressor = cache.delete(cache_key)
+            cache[cache_key] = compressor
+            @cache_stats[:hits] += 1
+            compressor
+          else
+            # Cache miss - create new compressor
+            compressor = factory_block.call
+            
+            # Evict oldest entry if cache is full
+            if cache.size >= MAX_CACHE_SIZE
+              evicted_key = cache.keys.first
+              cache.delete(evicted_key)
+              @cache_stats[:evictions] += 1
+            end
+            
+            cache[cache_key] = compressor
+            @cache_stats[:misses] += 1
+            compressor
+          end
+        end
+      end
+
+      # Generate cache key from configuration hash
+      # @param [Hash] config_hash Configuration parameters
+      # @return [String] Unique cache key
+      def generate_cache_key(config_hash)
+        return 'default' if config_hash.nil? || config_hash.empty?
+        
+        # Sort keys for consistent hashing
+        sorted_config = config_hash.sort.to_h
+        # Use SHA256 for consistent, collision-resistant keys
+        require 'digest'
+        Digest::SHA256.hexdigest(sorted_config.to_s)[0..16] # First 16 chars for brevity
+      end
+
+      # Clear all caches (useful for testing and memory management)
+      def clear_all
+        @cache_mutex.synchronize do
+          @compressor_caches.each { |_, cache| cache.clear }
+          @cache_stats = { hits: 0, misses: 0, evictions: 0 }
+        end
+      end
+
+      # Get cache statistics (for monitoring and testing)
+      # @return [Hash] Cache hit/miss/eviction statistics
+      def stats
+        @cache_mutex.synchronize { @cache_stats.dup }
+      end
+
+      # Get cache sizes (for monitoring)
+      # @return [Hash] Current cache sizes by type
+      def cache_sizes
+        @cache_mutex.synchronize do
+          {
+            css: @compressor_caches[:css].size,
+            js: @compressor_caches[:js].size,
+            html: @compressor_caches[:html].size,
+            total: @compressor_caches.values.sum(&:size)
+          }
+        end
+      end
+
+      # Check if caching is effectively working
+      # @return [Float] Cache hit ratio (0.0 to 1.0)
+      def hit_ratio
+        @cache_mutex.synchronize do
+          total = @cache_stats[:hits] + @cache_stats[:misses]
+          return 0.0 if total == 0
+          @cache_stats[:hits].to_f / total
+        end
+      end
+    end
+
     # Wrapper class to provide enhanced CSS compression for HTML compressor
     # This maintains the same interface as CSSminify2 while adding enhanced features
     class CSSEnhancedWrapper
@@ -323,10 +429,23 @@ module Jekyll
       # @param [CompressionConfig] config Configuration instance
       # @return [Object] CSS compressor instance
       def create_css_compressor(config)
+        # Generate cache key from configuration
         if config.css_enhanced_mode? && config.css_enhanced_options
-          CSSEnhancedWrapper.new(config.css_enhanced_options)
+          cache_key = CompressorCache.generate_cache_key({
+            enhanced_mode: true,
+            options: config.css_enhanced_options
+          })
         else
-          CSSminify2.new()
+          cache_key = CompressorCache.generate_cache_key({ enhanced_mode: false })
+        end
+
+        # Use cache to get or create compressor
+        CompressorCache.get_or_create(:css, cache_key) do
+          if config.css_enhanced_mode? && config.css_enhanced_options
+            CSSEnhancedWrapper.new(config.css_enhanced_options)
+          else
+            CSSminify2.new()
+          end
         end
       end
 
@@ -334,10 +453,20 @@ module Jekyll
       # @param [CompressionConfig] config Configuration instance
       # @return [Terser] JavaScript compressor instance
       def create_js_compressor(config)
-        if config.has_terser_args?
-          ::Terser.new(config.terser_args)
+        # Generate cache key from Terser configuration
+        cache_key = if config.has_terser_args?
+          CompressorCache.generate_cache_key({ terser_args: config.terser_args })
         else
-          ::Terser.new()
+          CompressorCache.generate_cache_key({ terser_args: nil })
+        end
+
+        # Use cache to get or create compressor
+        CompressorCache.get_or_create(:js, cache_key) do
+          if config.has_terser_args?
+            ::Terser.new(config.terser_args)
+          else
+            ::Terser.new()
+          end
         end
       end
 
@@ -345,10 +474,50 @@ module Jekyll
       # @param [CompressionConfig] config Configuration instance
       # @return [HtmlCompressor::Compressor] HTML compressor instance
       def create_html_compressor(config)
+        # Generate cache key from HTML compressor configuration
         html_args = config.html_compressor_args
-        html_args[:css_compressor] = create_css_compressor(config)
-        html_args[:javascript_compressor] = create_js_compressor(config)
-        HtmlCompressor::Compressor.new(html_args)
+        cache_key = CompressorCache.generate_cache_key({
+          html_args: html_args,
+          css_enhanced: config.css_enhanced_mode?,
+          css_options: config.css_enhanced_options,
+          terser_args: config.terser_args
+        })
+
+        # Use cache to get or create HTML compressor
+        # Avoid deadlock by creating sub-compressors outside the cache lock
+        CompressorCache.get_or_create(:html, cache_key) do
+          # Create sub-compressors first (outside the HTML cache lock)
+          css_compressor = create_css_compressor_uncached(config)
+          js_compressor = create_js_compressor_uncached(config)
+          
+          # Create fresh args hash for this instance
+          fresh_html_args = html_args.dup
+          fresh_html_args[:css_compressor] = css_compressor
+          fresh_html_args[:javascript_compressor] = js_compressor
+          HtmlCompressor::Compressor.new(fresh_html_args)
+        end
+      end
+
+      # Internal method to create CSS compressor without caching (avoids deadlock)
+      # @param [CompressionConfig] config Configuration instance
+      # @return [Object] CSS compressor instance
+      def create_css_compressor_uncached(config)
+        if config.css_enhanced_mode? && config.css_enhanced_options
+          CSSEnhancedWrapper.new(config.css_enhanced_options)
+        else
+          CSSminify2.new()
+        end
+      end
+
+      # Internal method to create JS compressor without caching (avoids deadlock)
+      # @param [CompressionConfig] config Configuration instance
+      # @return [Terser] JavaScript compressor instance
+      def create_js_compressor_uncached(config)
+        if config.has_terser_args?
+          ::Terser.new(config.terser_args)
+        else
+          ::Terser.new()
+        end
       end
 
       # Compresses CSS content using appropriate compressor with validation
@@ -367,7 +536,7 @@ module Jekyll
           if config.css_enhanced_mode? && config.css_enhanced_options
             CSSminify2.compress_enhanced(content, config.css_enhanced_options)
           else
-            compressor = CSSminify2.new()
+            compressor = create_css_compressor(config)
             # Pass nil to disable line breaks completely for performance (PR #61)
             compressor.compress(content, nil)
           end
