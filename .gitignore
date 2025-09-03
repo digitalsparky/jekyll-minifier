@@ -8,3 +8,12 @@ rdoc
 doc
 .yardoc
 .rspec
+.rspec_status
+*.db
+*.log
+*.tmp
+*~
+*.bak
+.DS_Store
+tmp/
+spec/fixtures/_site/
