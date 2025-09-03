@@ -17,3 +17,8 @@ doc
 .DS_Store
 tmp/
 spec/fixtures/_site/
+
+# Test files that shouldn't be committed
+bad.css
+bad.js
+test.css

@@ -339,13 +339,13 @@ describe "Jekyll Minifier - Input Validation" do
   describe "Content validation during compression" do
     context "with oversized files" do
       it "skips compression for files that are too large" do
-        # Create a large content string
-        large_content = 'a' * (60 * 1024 * 1024) # 60MB
+        # Create a large content string just above the 50MB limit
+        large_content = 'a' * (51 * 1024 * 1024) # 51MB
 
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /too large/)
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Skipping CSS compression/)
 
-        # Create a test compressor with proper site reference
+        # Create a test compressor with proper site reference and mock output_file
         test_compressor = Class.new do
           include Jekyll::Compressor
           attr_accessor :site
@@ -353,11 +353,16 @@ describe "Jekyll Minifier - Input Validation" do
           def initialize(site)
             @site = site
           end
+
+          # Override output_file to prevent actual disk writes during testing
+          def output_file(dest, content)
+            # Do nothing - prevent file write
+          end
         end
 
         compressor = test_compressor.new(site)
 
-        # Should return original content without compression
+        # Should return without writing to disk
         compressor.output_css('test.css', large_content)
       end
     end
