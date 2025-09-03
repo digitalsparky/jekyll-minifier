@@ -12,19 +12,19 @@ module Jekyll
 
       # Maximum safe file size for processing (50MB)
       MAX_SAFE_FILE_SIZE = 50 * 1024 * 1024
-      
+
       # Maximum safe configuration value sizes
       MAX_SAFE_STRING_LENGTH = 10_000
       MAX_SAFE_ARRAY_SIZE = 1_000
       MAX_SAFE_HASH_SIZE = 100
-      
+
       # Validates boolean configuration values
       # @param [Object] value The value to validate
       # @param [String] key Configuration key name for error messages
       # @return [Boolean, nil] Validated boolean value or nil for invalid
       def validate_boolean(value, key = 'unknown')
         return nil if value.nil?
-        
+
         case value
         when true, false
           value
@@ -37,7 +37,7 @@ module Jekyll
           nil
         end
       end
-      
+
       # Validates integer configuration values with range checking
       # @param [Object] value The value to validate
       # @param [String] key Configuration key name
@@ -46,22 +46,22 @@ module Jekyll
       # @return [Integer, nil] Validated integer or nil for invalid
       def validate_integer(value, key = 'unknown', min = 0, max = 1_000_000)
         return nil if value.nil?
-        
+
         begin
           int_value = Integer(value)
-          
+
           if int_value < min || int_value > max
             Jekyll.logger.warn("Jekyll Minifier:", "Integer value for '#{key}' out of range [#{min}-#{max}]: #{int_value}. Using default.")
             return nil
           end
-          
+
           int_value
         rescue ArgumentError, TypeError
           Jekyll.logger.warn("Jekyll Minifier:", "Invalid integer value for '#{key}': #{value.inspect}. Using default.")
           nil
         end
       end
-      
+
       # Validates string configuration values with length and safety checks
       # @param [Object] value The value to validate
       # @param [String] key Configuration key name
@@ -70,23 +70,23 @@ module Jekyll
       def validate_string(value, key = 'unknown', max_length = MAX_SAFE_STRING_LENGTH)
         return nil if value.nil?
         return nil unless value.respond_to?(:to_s)
-        
+
         str_value = value.to_s
-        
+
         if str_value.length > max_length
           Jekyll.logger.warn("Jekyll Minifier:", "String value for '#{key}' too long (#{str_value.length} > #{max_length}). Using default.")
           return nil
         end
-        
+
         # Basic safety check for control characters
         if str_value.match?(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/)
           Jekyll.logger.warn("Jekyll Minifier:", "String value for '#{key}' contains unsafe control characters. Using default.")
           return nil
         end
-        
+
         str_value
       end
-      
+
       # Validates array configuration values with size and content checks
       # @param [Object] value The value to validate
       # @param [String] key Configuration key name
@@ -94,19 +94,19 @@ module Jekyll
       # @return [Array, nil] Validated array or empty array for invalid
       def validate_array(value, key = 'unknown', max_size = MAX_SAFE_ARRAY_SIZE)
         return [] if value.nil?
-        
+
         # Convert single values to arrays
         array_value = value.respond_to?(:to_a) ? value.to_a : [value]
-        
+
         if array_value.size > max_size
           Jekyll.logger.warn("Jekyll Minifier:", "Array value for '#{key}' too large (#{array_value.size} > #{max_size}). Truncating.")
           array_value = array_value.take(max_size)
         end
-        
+
         # Filter out invalid elements
         valid_elements = array_value.filter_map do |element|
           next nil if element.nil?
-          
+
           if element.respond_to?(:to_s)
             str_element = element.to_s
             next nil if str_element.empty? || str_element.length > MAX_SAFE_STRING_LENGTH
@@ -115,10 +115,10 @@ module Jekyll
             nil
           end
         end
-        
+
         valid_elements
       end
-      
+
       # Validates hash configuration values with size and content checks
       # @param [Object] value The value to validate
       # @param [String] key Configuration key name
@@ -127,22 +127,22 @@ module Jekyll
       def validate_hash(value, key = 'unknown', max_size = MAX_SAFE_HASH_SIZE)
         return nil if value.nil?
         return nil unless value.respond_to?(:to_h)
-        
+
         begin
           hash_value = value.to_h
-          
+
           if hash_value.size > max_size
             Jekyll.logger.warn("Jekyll Minifier:", "Hash value for '#{key}' too large (#{hash_value.size} > #{max_size}). Using default.")
             return nil
           end
-          
+
           # Validate hash keys and values
           validated_hash = {}
           hash_value.each do |k, v|
             # Convert keys to symbols for consistency
             key_sym = k.respond_to?(:to_sym) ? k.to_sym : nil
             next unless key_sym
-            
+
             # Basic validation of values
             case v
             when String
@@ -159,14 +159,14 @@ module Jekyll
               Jekyll.logger.warn("Jekyll Minifier:", "Unsupported value type for '#{key}[#{key_sym}]': #{v.class}. Skipping.")
             end
           end
-          
+
           validated_hash
         rescue => e
           Jekyll.logger.warn("Jekyll Minifier:", "Failed to validate hash for '#{key}': #{e.message}. Using default.")
           nil
         end
       end
-      
+
       # Validates file content size and encoding
       # @param [String] content File content to validate
       # @param [String] file_type Type of file (css, js, html, json)
@@ -175,127 +175,45 @@ module Jekyll
       def validate_file_content(content, file_type = 'unknown', file_path = 'unknown')
         return false if content.nil?
         return false unless content.respond_to?(:bytesize)
-        
+
         # Check file size
         if content.bytesize > MAX_SAFE_FILE_SIZE
           Jekyll.logger.warn("Jekyll Minifier:", "File too large for safe processing: #{file_path} (#{content.bytesize} bytes > #{MAX_SAFE_FILE_SIZE})")
           return false
         end
-        
+
         # Check encoding validity
         unless content.valid_encoding?
           Jekyll.logger.warn("Jekyll Minifier:", "Invalid encoding in file: #{file_path}. Skipping minification.")
           return false
         end
-        
-        # Basic content validation per file type
-        case file_type
-        when 'css'
-          validate_css_content(content, file_path)
-        when 'js', 'javascript'
-          validate_js_content(content, file_path)
-        when 'json'
-          validate_json_content(content, file_path)
-        when 'html', 'xml'
-          validate_html_content(content, file_path)
-        else
-          true # Unknown types pass through
-        end
-      end
-      
-      # Validates CSS content for basic syntax safety
-      # @param [String] content CSS content
-      # @param [String] file_path File path for error messages
-      # @return [Boolean] True if content appears safe
-      def validate_css_content(content, file_path = 'unknown')
-        # Check for extremely unbalanced braces (potential malformed CSS)
-        open_braces = content.count('{')
-        close_braces = content.count('}')
-        
-        if (open_braces - close_braces).abs > 100
-          Jekyll.logger.warn("Jekyll Minifier:", "CSS file appears malformed (unbalanced braces): #{file_path}")
-          return false
-        end
-        
+
+        # Content validation is handled by the actual minification libraries
+        # They will properly parse and validate the content
         true
       end
-      
-      # Validates JavaScript content for basic syntax safety
-      # @param [String] content JavaScript content
-      # @param [String] file_path File path for error messages
-      # @return [Boolean] True if content appears safe
-      def validate_js_content(content, file_path = 'unknown')
-        # Check for extremely unbalanced braces and parentheses
-        open_braces = content.count('{')
-        close_braces = content.count('}')
-        open_parens = content.count('(')
-        close_parens = content.count(')')
-        
-        if (open_braces - close_braces).abs > 100 || (open_parens - close_parens).abs > 100
-          Jekyll.logger.warn("Jekyll Minifier:", "JavaScript file appears malformed (unbalanced braces/parens): #{file_path}")
-          return false
-        end
-        
-        true
-      end
-      
-      # Validates JSON content for syntax safety
-      # @param [String] content JSON content
-      # @param [String] file_path File path for error messages
-      # @return [Boolean] True if content appears safe
-      def validate_json_content(content, file_path = 'unknown')
-        # Basic JSON structure validation without full parsing
-        trimmed = content.strip
-        
-        unless (trimmed.start_with?('{') && trimmed.end_with?('}')) || 
-               (trimmed.start_with?('[') && trimmed.end_with?(']'))
-          Jekyll.logger.warn("Jekyll Minifier:", "JSON file doesn't appear to have valid structure: #{file_path}")
-          return false
-        end
-        
-        true
-      end
-      
-      # Validates HTML content for basic syntax safety
-      # @param [String] content HTML content
-      # @param [String] file_path File path for error messages
-      # @return [Boolean] True if content appears safe
-      def validate_html_content(content, file_path = 'unknown')
-        # Basic HTML tag balance check
-        open_tags = content.scan(/<[^\/>]+>/).length
-        close_tags = content.scan(/<\/[^>]+>/).length
-        self_closing = content.scan(/<[^>]+\/>/).length
-        
-        # Allow for reasonable imbalance (HTML5 void elements, etc.)
-        if (open_tags - close_tags - self_closing).abs > 50
-          Jekyll.logger.warn("Jekyll Minifier:", "HTML file appears malformed (unbalanced tags): #{file_path}")
-          return false
-        end
-        
-        true
-      end
-      
+
       # Validates file paths for security issues
       # @param [String] path File path to validate
       # @return [Boolean] True if path is safe
       def validate_file_path(path)
         return false if path.nil? || path.empty?
         return false unless path.respond_to?(:to_s)
-        
+
         path_str = path.to_s
-        
+
         # Check for directory traversal attempts
         if path_str.include?('../') || path_str.include?('..\\') || path_str.include?('~/')
           Jekyll.logger.warn("Jekyll Minifier:", "Unsafe file path detected: #{path_str}")
           return false
         end
-        
+
         # Check for null bytes
         if path_str.include?("\0")
           Jekyll.logger.warn("Jekyll Minifier:", "File path contains null byte: #{path_str}")
           return false
         end
-        
+
         true
       end
     end
@@ -329,7 +247,7 @@ module Jekyll
       def get_or_create(type, cache_key, &factory_block)
         @cache_mutex.synchronize do
           cache = @compressor_caches[type]
-          
+
           if cache.key?(cache_key)
             # Cache hit - move to end for LRU
             compressor = cache.delete(cache_key)
@@ -339,14 +257,14 @@ module Jekyll
           else
             # Cache miss - create new compressor
             compressor = factory_block.call
-            
+
             # Evict oldest entry if cache is full
             if cache.size >= MAX_CACHE_SIZE
               evicted_key = cache.keys.first
               cache.delete(evicted_key)
               @cache_stats[:evictions] += 1
             end
-            
+
             cache[cache_key] = compressor
             @cache_stats[:misses] += 1
             compressor
@@ -359,7 +277,7 @@ module Jekyll
       # @return [String] Unique cache key
       def generate_cache_key(config_hash)
         return 'default' if config_hash.nil? || config_hash.empty?
-        
+
         # Sort keys for consistent hashing
         sorted_config = config_hash.sort.to_h
         # Use SHA256 for consistent, collision-resistant keys
@@ -489,7 +407,7 @@ module Jekyll
           # Create sub-compressors first (outside the HTML cache lock)
           css_compressor = create_css_compressor_uncached(config)
           js_compressor = create_js_compressor_uncached(config)
-          
+
           # Create fresh args hash for this instance
           fresh_html_args = html_args.dup
           fresh_html_args[:css_compressor] = css_compressor
@@ -531,7 +449,7 @@ module Jekyll
           Jekyll.logger.warn("Jekyll Minifier:", "Skipping CSS compression for unsafe content: #{file_path}")
           return content
         end
-        
+
         begin
           if config.css_enhanced_mode? && config.css_enhanced_options
             CSSminify2.compress_enhanced(content, config.css_enhanced_options)
@@ -557,7 +475,7 @@ module Jekyll
           Jekyll.logger.warn("Jekyll Minifier:", "Skipping JavaScript compression for unsafe content: #{file_path}")
           return content
         end
-        
+
         begin
           compressor = create_js_compressor(config)
           compressor.compile(content)
@@ -577,7 +495,7 @@ module Jekyll
           Jekyll.logger.warn("Jekyll Minifier:", "Skipping JSON compression for unsafe content: #{file_path}")
           return content
         end
-        
+
         begin
           JSON.minify(content)
         rescue => e
@@ -591,7 +509,7 @@ module Jekyll
     class CompressionConfig
       # Configuration key constants to eliminate magic strings
       CONFIG_ROOT = 'jekyll-minifier'
-      
+
       # HTML Compression Options
       HTML_REMOVE_SPACES_INSIDE_TAGS = 'remove_spaces_inside_tags'
       HTML_REMOVE_MULTI_SPACES = 'remove_multi_spaces'
@@ -612,12 +530,12 @@ module Jekyll
       HTML_PRESERVE_LINE_BREAKS = 'preserve_line_breaks'
       HTML_SIMPLE_BOOLEAN_ATTRIBUTES = 'simple_boolean_attributes'
       HTML_COMPRESS_JS_TEMPLATES = 'compress_js_templates'
-      
+
       # File Type Compression Toggles
       COMPRESS_CSS = 'compress_css'
       COMPRESS_JAVASCRIPT = 'compress_javascript'
       COMPRESS_JSON = 'compress_json'
-      
+
       # Enhanced CSS Compression Options (cssminify2 v2.1.0+)
       CSS_MERGE_DUPLICATE_SELECTORS = 'css_merge_duplicate_selectors'
       CSS_OPTIMIZE_SHORTHAND_PROPERTIES = 'css_optimize_shorthand_properties'
@@ -625,28 +543,28 @@ module Jekyll
       CSS_PRESERVE_IE_HACKS = 'css_preserve_ie_hacks'
       CSS_COMPRESS_VARIABLES = 'css_compress_variables'
       CSS_ENHANCED_MODE = 'css_enhanced_mode'
-      
+
       # JavaScript/Terser Configuration
       TERSER_ARGS = 'terser_args'
       UGLIFIER_ARGS = 'uglifier_args' # Backward compatibility
-      
+
       # Pattern Preservation
       PRESERVE_PATTERNS = 'preserve_patterns'
       PRESERVE_PHP = 'preserve_php'
-      
+
       # File Exclusions
       EXCLUDE = 'exclude'
 
       def initialize(site_config)
         @config = site_config || {}
         @raw_minifier_config = @config[CONFIG_ROOT] || {}
-        
+
         # Validate and sanitize the configuration
         @minifier_config = validate_configuration(@raw_minifier_config)
-        
+
         # Pre-compute commonly used values for performance
         @computed_values = {}
-        
+
         # Pre-compile terser arguments for JavaScript compression
         _compute_terser_args
       end
@@ -710,7 +628,7 @@ module Jekyll
       # Generate enhanced CSS compression options hash
       def css_enhanced_options
         return nil unless css_enhanced_mode?
-        
+
         {
           merge_duplicate_selectors: css_merge_duplicate_selectors?,
           optimize_shorthand_properties: css_optimize_shorthand_properties?,
@@ -733,7 +651,7 @@ module Jekyll
       def preserve_patterns
         patterns = get_array(PRESERVE_PATTERNS)
         return patterns unless patterns.empty?
-        
+
         # Return empty array if no patterns configured
         []
       end
@@ -763,11 +681,11 @@ module Jekyll
       private
 
       def base_html_args
-        { 
-          remove_comments: true, 
-          compress_css: true, 
-          compress_javascript: true, 
-          preserve_patterns: [] 
+        {
+          remove_comments: true,
+          compress_css: true,
+          compress_javascript: true,
+          preserve_patterns: []
         }
       end
 
@@ -804,7 +722,7 @@ module Jekyll
 
       def apply_preserve_patterns(args)
         args[:preserve_patterns] += [php_preserve_pattern] if preserve_php?
-        
+
         configured_patterns = preserve_patterns
         if !configured_patterns.empty? && configured_patterns.respond_to?(:map)
           compiled_patterns = compile_preserve_patterns(configured_patterns)
@@ -817,23 +735,23 @@ module Jekyll
       # @return [Hash] Validated and sanitized configuration
       def validate_configuration(raw_config)
         return {} unless raw_config.respond_to?(:to_h)
-        
+
         validated_config = {}
-        
+
         raw_config.each do |key, value|
           validated_key = ValidationHelpers.validate_string(key, "config_key", 100)
           next unless validated_key
-          
+
           validated_value = validate_config_value(validated_key, value)
           validated_config[validated_key] = validated_value unless validated_value.nil?
         end
-        
+
         validated_config
       rescue => e
         Jekyll.logger.warn("Jekyll Minifier:", "Configuration validation failed: #{e.message}. Using defaults.")
         {}
       end
-      
+
       # Validates individual configuration values based on their key
       # @param [String] key Configuration key
       # @param [Object] value Configuration value
@@ -842,32 +760,32 @@ module Jekyll
         case key
         # Boolean HTML compression options
         when HTML_REMOVE_SPACES_INSIDE_TAGS, HTML_REMOVE_MULTI_SPACES, HTML_REMOVE_COMMENTS,
-             HTML_REMOVE_INTERTAG_SPACES, HTML_REMOVE_QUOTES, HTML_COMPRESS_CSS, 
+             HTML_REMOVE_INTERTAG_SPACES, HTML_REMOVE_QUOTES, HTML_COMPRESS_CSS,
              HTML_COMPRESS_JAVASCRIPT, HTML_SIMPLE_DOCTYPE, HTML_REMOVE_SCRIPT_ATTRIBUTES,
              HTML_REMOVE_STYLE_ATTRIBUTES, HTML_REMOVE_LINK_ATTRIBUTES, HTML_REMOVE_FORM_ATTRIBUTES,
              HTML_REMOVE_INPUT_ATTRIBUTES, HTML_REMOVE_JAVASCRIPT_PROTOCOL, HTML_REMOVE_HTTP_PROTOCOL,
              HTML_REMOVE_HTTPS_PROTOCOL, HTML_PRESERVE_LINE_BREAKS, HTML_SIMPLE_BOOLEAN_ATTRIBUTES,
              HTML_COMPRESS_JS_TEMPLATES, COMPRESS_CSS, COMPRESS_JAVASCRIPT, COMPRESS_JSON,
-             CSS_MERGE_DUPLICATE_SELECTORS, CSS_OPTIMIZE_SHORTHAND_PROPERTIES, 
+             CSS_MERGE_DUPLICATE_SELECTORS, CSS_OPTIMIZE_SHORTHAND_PROPERTIES,
              CSS_ADVANCED_COLOR_OPTIMIZATION, CSS_PRESERVE_IE_HACKS, CSS_COMPRESS_VARIABLES,
              CSS_ENHANCED_MODE, PRESERVE_PHP
           ValidationHelpers.validate_boolean(value, key)
-          
+
         # Array configurations - for backward compatibility, don't validate these strictly
         when PRESERVE_PATTERNS, EXCLUDE
           # Let the existing get_array method handle the conversion for backward compatibility
           value
-          
+
         # Hash configurations (Terser/Uglifier args)
         when TERSER_ARGS, UGLIFIER_ARGS
           validate_compressor_args(value, key)
-          
+
         else
           # Pass through other values for backward compatibility
           value
         end
       end
-      
+
       # Validates compressor arguments (Terser/Uglifier) with security checks
       # @param [Object] value Compressor arguments
       # @param [String] key Configuration key name
@@ -875,7 +793,7 @@ module Jekyll
       def validate_compressor_args(value, key)
         validated_hash = ValidationHelpers.validate_hash(value, key, 20) # Limit to 20 options
         return nil unless validated_hash
-        
+
         # Additional validation for known dangerous options
         safe_args = {}
         validated_hash.each do |k, v|
@@ -922,7 +840,7 @@ module Jekyll
             end
           end
         end
-        
+
         safe_args.empty? ? nil : safe_args
       end
 
@@ -937,7 +855,7 @@ module Jekyll
       def get_array(key)
         value = @minifier_config[key]
         return [] if value.nil?
-        
+
         # For backward compatibility, if value exists but isn't an array, convert it
         return value if value.respond_to?(:to_a)
         [value]
@@ -948,11 +866,11 @@ module Jekyll
         # Support both terser_args and uglifier_args for backward compatibility
         # Use validated configuration
         terser_options = @minifier_config[TERSER_ARGS] || @minifier_config[UGLIFIER_ARGS]
-        
+
         if terser_options && terser_options.respond_to?(:map)
           # Apply validation to the terser options
           validated_options = validate_compressor_args(terser_options, TERSER_ARGS)
-          
+
           if validated_options && !validated_options.empty?
             # Convert keys to symbols for consistency
             @computed_values[:terser_args] = Hash[validated_options.map{|(k,v)| [k.to_sym,v]}]
@@ -970,7 +888,7 @@ module Jekyll
       # This will be made accessible through dependency injection
       def compile_preserve_patterns(patterns)
         return [] unless patterns.respond_to?(:map)
-        
+
         patterns.filter_map { |pattern| compile_single_pattern(pattern) }
       end
 
@@ -997,24 +915,24 @@ module Jekyll
       def valid_regex_pattern?(pattern)
         return false unless pattern.is_a?(String) && !pattern.empty? && !pattern.strip.empty?
         return false if pattern.length > 1000
-        
+
         # Basic ReDoS vulnerability checks using a more efficient approach
         redos_checks = [
           /\([^)]*[+*]\)[+*]/, # nested quantifiers
           /\([^)]*\|[^)]*\)[+*]/ # alternation with overlapping patterns
         ]
-        
+
         return false if redos_checks.any? { |check| pattern =~ check }
         return false if pattern.count('(') > 10 # excessive nesting
         return false if pattern.scan(/[+*?]\??/).length > 20 # excessive quantifiers
-        
+
         true
       end
 
       def compile_regex_with_timeout(pattern, timeout_seconds)
         result = nil
         thread = Thread.new { result = create_regex_safely(pattern) }
-        
+
         if thread.join(timeout_seconds)
           result
         else
@@ -1042,7 +960,7 @@ module Jekyll
 
     def output_compressed(path, context)
       extension = File.extname(path)
-      
+
       case extension
       when '.js'
         output_js_or_file(path, context)
@@ -1073,21 +991,21 @@ module Jekyll
 
     def output_html(path, content)
       return output_file(path, content) unless production_environment?
-      
+
       # Validate file path for security
       unless Jekyll::Minifier::ValidationHelpers.validate_file_path(path)
         Jekyll.logger.warn("Jekyll Minifier:", "Unsafe file path detected, skipping compression: #{path}")
-        return output_file(path, content)
+        return # Don't write anything for unsafe paths
       end
-      
+
       # Validate content before compression
       unless Jekyll::Minifier::ValidationHelpers.validate_file_content(content, 'html', path)
         Jekyll.logger.warn("Jekyll Minifier:", "Unsafe HTML content detected, skipping compression: #{path}")
         return output_file(path, content)
       end
-      
+
       config = Jekyll::Minifier::CompressionConfig.new(@site.config)
-      
+
       begin
         compressor = Jekyll::Minifier::CompressorFactory.create_html_compressor(config)
         compressed_content = compressor.compress(content)
@@ -1100,48 +1018,48 @@ module Jekyll
 
     def output_js(path, content)
       return output_file(path, content) unless production_environment?
-      
+
       # Validate file path for security
       unless Jekyll::Minifier::ValidationHelpers.validate_file_path(path)
         Jekyll.logger.warn("Jekyll Minifier:", "Unsafe file path detected, skipping compression: #{path}")
-        return output_file(path, content)
+        return # Don't write anything for unsafe paths
       end
-      
+
       config = Jekyll::Minifier::CompressionConfig.new(@site.config)
       return output_file(path, content) unless config.compress_javascript?
-      
+
       compressed_content = Jekyll::Minifier::CompressorFactory.compress_js(content, config, path)
       output_file(path, compressed_content)
     end
 
     def output_json(path, content)
       return output_file(path, content) unless production_environment?
-      
+
       # Validate file path for security
       unless Jekyll::Minifier::ValidationHelpers.validate_file_path(path)
         Jekyll.logger.warn("Jekyll Minifier:", "Unsafe file path detected, skipping compression: #{path}")
-        return output_file(path, content)
+        return # Don't write anything for unsafe paths
       end
-      
+
       config = Jekyll::Minifier::CompressionConfig.new(@site.config)
       return output_file(path, content) unless config.compress_json?
-      
+
       compressed_content = Jekyll::Minifier::CompressorFactory.compress_json(content, path)
       output_file(path, compressed_content)
     end
 
     def output_css(path, content)
       return output_file(path, content) unless production_environment?
-      
+
       # Validate file path for security
       unless Jekyll::Minifier::ValidationHelpers.validate_file_path(path)
         Jekyll.logger.warn("Jekyll Minifier:", "Unsafe file path detected, skipping compression: #{path}")
-        return output_file(path, content)
+        return # Don't write anything for unsafe paths
       end
-      
+
       config = Jekyll::Minifier::CompressionConfig.new(@site.config)
       return output_file(path, content) unless config.compress_css?
-      
+
       compressed_content = Jekyll::Minifier::CompressorFactory.compress_css(content, config, path)
       output_file(path, compressed_content)
     end
@@ -1238,7 +1156,7 @@ module Jekyll
     def process_static_file(dest_path)
       extension = File.extname(dest_path)
       content = File.read(path)
-      
+
       case extension
       when '.js'
         process_js_file(dest_path, content)

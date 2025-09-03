@@ -1,0 +1,1 @@
+function test() { return <invalid syntax> ; }

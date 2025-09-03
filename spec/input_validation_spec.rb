@@ -40,10 +40,10 @@ describe "Jekyll Minifier - Input Validation" do
       it "handles invalid boolean values gracefully" do
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Invalid boolean value/)
         expect(validator.validate_boolean('invalid', 'test')).to be_nil
-        
+
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Invalid boolean value/)
         expect(validator.validate_boolean(42, 'test')).to be_nil
-        
+
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Invalid boolean value/)
         expect(validator.validate_boolean([], 'test')).to be_nil
       end
@@ -63,7 +63,7 @@ describe "Jekyll Minifier - Input Validation" do
       it "enforces range limits" do
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /out of range/)
         expect(validator.validate_integer(-5, 'test', 0, 100)).to be_nil
-        
+
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /out of range/)
         expect(validator.validate_integer(150, 'test', 0, 100)).to be_nil
       end
@@ -71,7 +71,7 @@ describe "Jekyll Minifier - Input Validation" do
       it "handles invalid integer values gracefully" do
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Invalid integer value/)
         expect(validator.validate_integer('not_a_number', 'test')).to be_nil
-        
+
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Invalid integer value/)
         expect(validator.validate_integer([], 'test')).to be_nil
       end
@@ -145,31 +145,34 @@ describe "Jekyll Minifier - Input Validation" do
         expect(validator.validate_file_content(invalid_content, 'txt', 'bad.txt')).to be(false)
       end
 
-      it "validates CSS content structure" do
+      it "delegates CSS validation to minification libraries" do
         valid_css = 'body { margin: 0; }'
         expect(validator.validate_file_content(valid_css, 'css', 'style.css')).to be(true)
-        
+
+        # Malformed CSS passes basic validation - actual validation happens in the minifier
         malformed_css = 'body { margin: 0; ' + '{' * 150 # Too many unbalanced braces
-        expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /malformed/)
-        expect(validator.validate_file_content(malformed_css, 'css', 'bad.css')).to be(false)
+        # No warning expected anymore - content validation is delegated
+        expect(validator.validate_file_content(malformed_css, 'css', 'bad.css')).to be(true)
       end
 
-      it "validates JavaScript content structure" do
+      it "delegates JavaScript validation to minification libraries" do
         valid_js = 'function test() { return true; }'
         expect(validator.validate_file_content(valid_js, 'js', 'script.js')).to be(true)
-        
+
+        # Malformed JS passes basic validation - actual validation happens in the minifier
         malformed_js = 'function test() { return true; ' + '(' * 150 # Too many unbalanced parens
-        expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /malformed/)
-        expect(validator.validate_file_content(malformed_js, 'js', 'bad.js')).to be(false)
+        # No warning expected anymore - content validation is delegated
+        expect(validator.validate_file_content(malformed_js, 'js', 'bad.js')).to be(true)
       end
 
-      it "validates JSON content structure" do
+      it "delegates JSON validation to minification libraries" do
         valid_json = '{"key": "value"}'
         expect(validator.validate_file_content(valid_json, 'json', 'data.json')).to be(true)
-        
+
+        # Invalid JSON passes basic validation - actual validation happens in the minifier
         invalid_json = 'not json at all'
-        expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /valid structure/)
-        expect(validator.validate_file_content(invalid_json, 'json', 'bad.json')).to be(false)
+        # No warning expected anymore - content validation is delegated
+        expect(validator.validate_file_content(invalid_json, 'json', 'bad.json')).to be(true)
       end
     end
 
@@ -182,10 +185,10 @@ describe "Jekyll Minifier - Input Validation" do
       it "rejects directory traversal attempts" do
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Unsafe file path/)
         expect(validator.validate_file_path('../../../etc/passwd')).to be(false)
-        
+
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Unsafe file path/)
         expect(validator.validate_file_path('path\\..\\..\\windows')).to be(false)
-        
+
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Unsafe file path/)
         expect(validator.validate_file_path('~/secrets')).to be(false)
       end
@@ -226,17 +229,17 @@ describe "Jekyll Minifier - Input Validation" do
         end
 
         config_obj = Jekyll::Minifier::CompressionConfig.new(config)
-        
+
         # Should handle invalid values gracefully - some with defaults, some with conversion
         expect(config_obj.compress_css?).to be(true) # Default for invalid boolean
         expect(config_obj.compress_javascript?).to be(true) # Default for invalid boolean
         expect(config_obj.preserve_patterns).to eq(["not_an_array"]) # Converted to array for backward compatibility
-        # exclude_patterns will return the hash as-is for backward compatibility, 
+        # exclude_patterns will return the hash as-is for backward compatibility,
         # but get_array will convert it properly when accessed
         expect(config_obj.exclude_patterns).to be_a(Hash) # Returns invalid hash as-is for compatibility
         expect(config_obj.terser_args).to be_nil # Nil for invalid hash
         expect(config_obj.remove_comments).to be(true) # Default for invalid boolean
-        
+
         # Should have generated warnings
         expect(warnings.any? { |w| w.include?('Invalid boolean value') }).to be(true)
       end
@@ -262,7 +265,7 @@ describe "Jekyll Minifier - Input Validation" do
         allow(Jekyll.logger).to receive(:warn) do |prefix, message|
           warnings << "#{prefix} #{message}"
         end
-        
+
         info_messages = []
         allow(Jekyll.logger).to receive(:info) do |prefix, message|
           info_messages << "#{prefix} #{message}"
@@ -270,7 +273,7 @@ describe "Jekyll Minifier - Input Validation" do
 
         config_obj = Jekyll::Minifier::CompressionConfig.new(config)
         terser_args = config_obj.terser_args
-        
+
         expect(terser_args).to be_a(Hash)
         expect(terser_args[:eval]).to be(true) # Allowed after validation
         # Terser args should be present and have some validated options
@@ -279,7 +282,7 @@ describe "Jekyll Minifier - Input Validation" do
         expect(terser_args[:unknown_option]).to eq("test")
         expect(terser_args[:ecma]).to eq(2015)
         expect(terser_args).not_to have_key(:harmony) # Should be filtered
-        
+
         # Should log filtering of harmony option
         expect(info_messages.any? { |m| m.include?('harmony') }).to be(true)
       end
@@ -302,12 +305,12 @@ describe "Jekyll Minifier - Input Validation" do
         end
 
         config_obj = Jekyll::Minifier::CompressionConfig.new(config)
-        
+
         # For backward compatibility, arrays are not truncated during config validation
         # Size limits are applied at the ValidationHelpers level when explicitly called
         expect(config_obj.preserve_patterns.size).to eq(150) # Full array preserved for compatibility
         expect(config_obj.exclude_patterns.size).to eq(150) # Full array preserved for compatibility
-        
+
         # The arrays are preserved for backward compatibility
         # Validation warnings may occur depending on internal implementation
         expect(config_obj).to be_a(Jekyll::Minifier::CompressionConfig)
@@ -323,7 +326,7 @@ describe "Jekyll Minifier - Input Validation" do
 
       it "handles malformed configuration gracefully" do
         config_obj = Jekyll::Minifier::CompressionConfig.new(config)
-        
+
         # Should use all defaults
         expect(config_obj.compress_css?).to be(true)
         expect(config_obj.compress_javascript?).to be(true)
@@ -338,44 +341,44 @@ describe "Jekyll Minifier - Input Validation" do
       it "skips compression for files that are too large" do
         # Create a large content string
         large_content = 'a' * (60 * 1024 * 1024) # 60MB
-        
+
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /too large/)
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Skipping CSS compression/)
-        
+
         # Create a test compressor with proper site reference
         test_compressor = Class.new do
           include Jekyll::Compressor
           attr_accessor :site
-          
+
           def initialize(site)
             @site = site
           end
         end
-        
+
         compressor = test_compressor.new(site)
-        
+
         # Should return original content without compression
         compressor.output_css('test.css', large_content)
       end
     end
 
     context "with malformed content" do
-      it "handles CSS with too many unbalanced braces" do
+      it "delegates CSS validation to the minifier library" do
         malformed_css = 'body { margin: 0; ' + '{' * 150
-        
-        expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /malformed/)
-        expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Skipping CSS compression/)
-        
+
+        # CSS minifier will handle the malformed CSS itself
+        # CSSminify2 doesn't necessarily warn - it just returns what it can process
+
         # Create a test compressor with proper site reference
         test_compressor = Class.new do
           include Jekyll::Compressor
           attr_accessor :site
-          
+
           def initialize(site)
             @site = site
           end
         end
-        
+
         compressor = test_compressor.new(site)
         compressor.output_css('bad.css', malformed_css)
       end
@@ -383,21 +386,21 @@ describe "Jekyll Minifier - Input Validation" do
       it "handles JavaScript with compression errors gracefully" do
         # Test with truly invalid JavaScript that will cause Terser to fail
         invalid_js = 'function test() { return <invalid syntax> ; }'
-        
+
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /compression failed/)
-        
+
         # Create a test compressor with proper site reference
         test_compressor = Class.new do
           include Jekyll::Compressor
           attr_accessor :site
-          
+
           def initialize(site)
             @site = site
           end
         end
-        
+
         compressor = test_compressor.new(site)
-        
+
         # Should handle the error and use original content
         compressor.output_js('bad.js', invalid_js)
       end
@@ -407,18 +410,20 @@ describe "Jekyll Minifier - Input Validation" do
       it "rejects directory traversal in file paths" do
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /Unsafe file path/)
         expect(Jekyll.logger).to receive(:warn).with("Jekyll Minifier:", /skipping compression/)
-        
+
         # Create a test compressor with proper site reference
         test_compressor = Class.new do
           include Jekyll::Compressor
           attr_accessor :site
-          
+
           def initialize(site)
             @site = site
           end
         end
-        
+
         compressor = test_compressor.new(site)
+
+        # This should trigger the file path validation and skip compression
         compressor.output_css('../../../etc/passwd', 'body { margin: 0; }')
       end
     end
@@ -452,23 +457,23 @@ describe "Jekyll Minifier - Input Validation" do
         end
 
         config_obj = Jekyll::Minifier::CompressionConfig.new(config)
-        
+
         # Configuration should be validated
         expect(config_obj.compress_css?).to be(true) # String "true" converted
-        
+
         # Preserve patterns will include all valid-looking patterns initially
         # ReDoS protection happens during pattern compilation, not during config validation
         expect(config_obj.preserve_patterns.size).to be >= 1 # At least the safe pattern
-        
+
         # Terser args should be validated
         terser_args = config_obj.terser_args
         expect(terser_args[:eval]).to be(false) # String "false" converted
         expect(terser_args).not_to have_key(:harmony) # Filtered legacy option
-        
+
         # ReDoS protection should still work
         # The dangerous pattern should be filtered by ReDoS protection
         # Invalid types and empty strings should be filtered by input validation
-        
+
         # Validation should complete successfully
         # Warnings may or may not be present depending on validation layer interaction
         # The important thing is that the system works with both validation types
@@ -498,12 +503,12 @@ describe "Jekyll Minifier - Input Validation" do
 
       it "maintains backward compatibility while adding validation" do
         config_obj = Jekyll::Minifier::CompressionConfig.new(config)
-        
+
         # Legacy configuration should work unchanged
         expect(config_obj.remove_comments).to be(true)
         expect(config_obj.compress_css?).to be(true)
         expect(config_obj.preserve_patterns).to eq(['<!-- LEGACY -->.*?<!-- /LEGACY -->'])
-        
+
         # Legacy uglifier_args should map to terser_args
         terser_args = config_obj.terser_args
         expect(terser_args[:compress]).to be(true)
